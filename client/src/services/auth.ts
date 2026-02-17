@@ -1,5 +1,6 @@
 // Simple auth state
 export let apiKey: string | null = localStorage.getItem('apiKey');
+export let adminApiKey: string | null = localStorage.getItem('adminApiKey');
 
 export const setApiKey = (key: string | null) => {
   apiKey = key;
@@ -7,6 +8,15 @@ export const setApiKey = (key: string | null) => {
     localStorage.setItem('apiKey', key);
   } else {
     localStorage.removeItem('apiKey');
+  }
+};
+
+export const setAdminApiKey = (key: string | null) => {
+  adminApiKey = key;
+  if (key) {
+    localStorage.setItem('adminApiKey', key);
+  } else {
+    localStorage.removeItem('adminApiKey');
   }
 };
 

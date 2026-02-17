@@ -15,7 +15,16 @@ We (Sara and Erasmus) try to go on an Interrail trip each year. We built this  w
    npm run install:all
    ```
 
-2. **Start development**
+2. **Configure data source** (optional)
+   
+   Create a `.env` file in the `client` directory to control which data source to use:
+   
+   ```bash
+   # Backend URL - defaults to http://localhost:3001 if not set
+   VITE_BACKEND_URL=https://your-domain.com/vartarvipavag
+   ```
+
+3. **Start development**
    ```bash
    npm run dev
    ```
@@ -25,9 +34,9 @@ We (Sara and Erasmus) try to go on an Interrail trip each year. We built this  w
    npm run build
    ```
 
-3. **Open in browser**
+4. **Open in browser**
    - Frontend: http://localhost:3000
-   - Backend: http://localhost:3001
+   - Backend: http://localhost:3001 (if using 'local' mode)
 
 ## Deployment
 
@@ -73,6 +82,15 @@ Then you need to also host the client / front-end somewhere (like through Github
 ## 🔐 Security
 
 Read operations (map viewing) are public, write operations (adding positions) are restricted to localhost for Home Assistant integration.
+
+### Admin Mode
+
+Admin mode allows deleting incorrectly logged positions and is only accessible from the local network. To access admin login, use one of these URLs:
+
+- `?admin=true` - Add to the login URL (e.g., `http://localhost:3000?admin=true`)
+- `#admin` - Add as a hash to the URL (e.g., `http://localhost:3000#admin`)
+
+The admin option will only appear when accessed through these special URLs. Admin password is configured via `ADMIN_PASSWORD` environment variable on the server.
 
 ## 📁 Project Structure
 
