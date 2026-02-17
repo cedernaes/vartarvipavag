@@ -143,8 +143,8 @@ router.put('/:id', securityMiddleware.onlyInternalNetwork, async (req: Request, 
   }
 });
 
-// DELETE /api/positions/:id - Delete position (internal network only)
-router.delete('/:id', securityMiddleware.onlyInternalNetwork, async (req: Request, res: Response) => {
+// DELETE /api/positions/:id - Delete position (admin + internal network only)
+router.delete('/:id', securityMiddleware.requireAdminAndLocalNetwork, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const deleted = await positionModel.delete(id);

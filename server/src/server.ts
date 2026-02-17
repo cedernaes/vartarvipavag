@@ -8,6 +8,7 @@ import { Server } from 'socket.io';
 
 import { DatabaseManager } from './models/database';
 import { securityMiddleware } from './middleware/security';
+import authRouter from './routes/auth';
 import feedRouter from './routes/feed';
 import positionsRouter from './routes/positions';
 import telegramRouter, { initializeTelegramBot } from './routes/telegram';
@@ -102,6 +103,7 @@ app.post('/api/login', (req, res) => {
 });
 
 // API routes
+app.use('/api/auth', authRouter);
 app.use('/api/positions', positionsRouter);
 app.use('/api/telegram', telegramRouter);
 app.use('/api/feed', feedRouter);

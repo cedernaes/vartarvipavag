@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents 
 import L from 'leaflet';
 import { Position, Post } from '../types';
 import { computeNightStopPositionIds } from '../utils/nightStops';
+import { PositionService } from '../services/api';
 
 // Fix for default markers in React-Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -162,11 +163,15 @@ function NightStopClusters({
   nightStopPositionIds,
   singleIcon,
   formatDate,
+  isAdminMode = false,
+  onDelete,
 }: {
   positions: Position[];
   nightStopPositionIds: Set<string>;
   singleIcon: L.DivIcon;
   formatDate: (d: string) => string;
+  isAdminMode?: boolean;
+  onDelete?: (positionId: string) => void;
 }) {
   const map = useMap();
   const [zoom, setZoom] = useState(() => map.getZoom());
@@ -233,9 +238,28 @@ function NightStopClusters({
                   <div style={{ marginBottom: '4px', fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
                     📆 {formatDate(cluster.items[0].timestamp)}
                   </div>
-                  <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
+                  <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold', marginBottom: isAdminMode ? '8px' : '0' }}>
                     📍 {cluster.items[0].latitude.toFixed(5)}, {cluster.items[0].longitude.toFixed(4)}
                   </div>
+                  {isAdminMode && onDelete && (
+                    <button
+                      onClick={() => onDelete(cluster.items[0].id)}
+                      style={{
+                        marginTop: '8px',
+                        padding: '6px 12px',
+                        background: '#dc2626',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '0.85em',
+                        fontWeight: 'bold',
+                        width: '100%'
+                      }}
+                    >
+                      🗑️ Ta bort
+                    </button>
+                  )}
                 </>
               ) : (
                 <>
@@ -260,13 +284,17 @@ interface InterrailMapProps {
   posts?: Post[];
   homeTimezone?: string; // IANA timezone (e.g., "Europe/Stockholm")
   nightStopHour?: number; // Hour of day for night stop detection (0-23)
+  isAdminMode?: boolean; // Whether admin mode is active
+  onPositionDeleted?: () => void; // Callback when a position is deleted
 }
 
 const InterrailMap: React.FC<InterrailMapProps> = ({
   positions,
   posts,
   homeTimezone,
-  nightStopHour
+  nightStopHour,
+  isAdminMode = false,
+  onPositionDeleted
 }) => {
   const [map, setMap] = useState<L.Map | null>(null);
 
@@ -289,6 +317,23 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
 
   // Get the latest feed post (posts are sorted newest first)
   const latestPost = posts && posts.length > 0 ? posts[0] : null;
+
+  // Function to handle position deletion (admin only)
+  const handleDeletePosition = async (positionId: string) => {
+    if (!window.confirm('Är du säker på att du vill ta bort denna position?')) {
+      return;
+    }
+
+    try {
+      await PositionService.deletePosition(positionId);
+      if (onPositionDeleted) {
+        onPositionDeleted();
+      }
+    } catch (error) {
+      console.error('Error deleting position:', error);
+      alert('Kunde inte ta bort positionen. Kontrollera att du är på det lokala nätverket.');
+    }
+  };
 
   // Function to pan to latest marker
   const panToLatestMarker = () => {
@@ -491,9 +536,29 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
                     📆 {formatDateDailyPosition(position.timestamp)}
                   </div>
                   
-                  <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
+                  <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold', marginBottom: isAdminMode ? '8px' : '0' }}>
                     📍 {position.latitude.toFixed(5)}, {position.longitude.toFixed(4)}
                   </div>
+
+                  {isAdminMode && (
+                    <button
+                      onClick={() => handleDeletePosition(position.id)}
+                      style={{
+                        marginTop: '8px',
+                        padding: '6px 12px',
+                        background: '#dc2626',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '0.85em',
+                        fontWeight: 'bold',
+                        width: '100%'
+                      }}
+                    >
+                      🗑️ Ta bort
+                    </button>
+                  )}
                 </div>
               </Popup>
             </Marker>
@@ -506,6 +571,8 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
           nightStopPositionIds={nightStopPositionIds}
           singleIcon={nightStopIcon}
           formatDate={formatDateNightStop}
+          isAdminMode={isAdminMode}
+          onDelete={handleDeletePosition}
         />
       </MapContainer>
       </div>

@@ -4,30 +4,28 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const useProdData = env.USE_PROD_DATA === 'true'
+
+  // Backend URL - defaults to localhost if not set
+  const backendUrl = env.VITE_BACKEND_URL || 'http://localhost:3001'
+  const isSecure = backendUrl.startsWith('https://')
 
   const config: any = {
     plugins: [react()],
+    define: {},
     server: {
       port: 3000,
       proxy: {
         '/api': {
-          target: useProdData
-            ? 'https://cedernaes.duckdns.org/vartarvipavag'
-            : 'http://localhost:3001',
+          target: backendUrl,
           changeOrigin: true,
-          secure: useProdData,
+          secure: isSecure,
         },
       },
     },
   }
 
-  // Only set VITE_API_URL if USE_PROD_DATA is set
-  if (useProdData) {
-    config.define = {
-      'import.meta.env.VITE_API_URL': JSON.stringify('http://localhost:3000')
-    }
-  }
+  // Set VITE_API_URL so requests go through proxy
+  config.define['import.meta.env.VITE_API_URL'] = JSON.stringify('http://localhost:3000')
 
   return config
 })
