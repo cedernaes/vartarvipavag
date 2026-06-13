@@ -1,6 +1,6 @@
 import axios from 'axios';
 import seedrandom from 'seedrandom';
-import { ApiResponse, Position } from '../types';
+import { ApiResponse, Position, Post } from '../types';
 import { apiKey, hashPassword, setApiKey } from './auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
@@ -147,6 +147,21 @@ export class PositionService {
       console.error('Health check failed:', error);
       return false;
     }
+  }
+}
+
+export class FeedService {
+  static async getFeed(): Promise<Post[]> {
+    const response = await api.get<ApiResponse<Post[]>>('/api/feed');
+    if (!response.data.success) {
+      throw new Error(response.data.error || 'Failed to fetch feed');
+    }
+    return response.data.data || [];
+  }
+
+  static getMediaUrl(filename: string): string {
+    const base = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    return `${base}/api/feed/media/${filename}`;
   }
 }
 

@@ -25,6 +25,17 @@ export interface PositionWithDistance extends Position {
   distanceFromPrevious?: number; // in kilometers
 }
 
+export interface Post {
+  id: string;
+  timestamp: string;
+  type: 'photo' | 'video' | 'text';
+  caption?: string;
+  media_path?: string;
+  latitude?: number;
+  longitude?: number;
+  telegram_user?: string;
+}
+
 export interface TravelStats {
   totalDistance: number;
   duration: number; // in days

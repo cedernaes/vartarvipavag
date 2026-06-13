@@ -6,6 +6,7 @@ import { join } from 'path';
 import { Server } from 'socket.io';
 
 import { DatabaseManager } from './models/database';
+import feedRouter from './routes/feed';
 import positionsRouter from './routes/positions';
 import telegramRouter, { initializeTelegramBot } from './routes/telegram';
 import { TelegramBotService } from './services/TelegramBot';
@@ -54,7 +55,12 @@ if (process.env.TELEGRAM_BOT_TOKEN) {
 }
 
 // Middleware
-// Note: CORS is handled by nginx, not by Express
+// In production, CORS is handled by nginx. In local dev, Express handles it.
+if (process.env.NODE_ENV !== 'production') {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const cors = require('cors');
+  app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
+}
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -73,6 +79,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/positions', positionsRouter);
 app.use('/api/telegram', telegramRouter);
+app.use('/api/feed', feedRouter);
 
 // Socket.IO for real-time updates
 io.on('connection', (socket) => {

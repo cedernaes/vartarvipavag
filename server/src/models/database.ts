@@ -45,6 +45,25 @@ export class DatabaseManager {
       )
     `);
 
+    // Create posts table for Telegram feed
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS posts (
+        id TEXT PRIMARY KEY,
+        timestamp TEXT NOT NULL,
+        type TEXT NOT NULL,
+        caption TEXT,
+        media_path TEXT,
+        latitude REAL,
+        longitude REAL,
+        telegram_user TEXT
+      )
+    `);
+
+    this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_posts_timestamp
+      ON posts(timestamp)
+    `);
+
     // Create indexes for faster queries
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_positions_timestamp

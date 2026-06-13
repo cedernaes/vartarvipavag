@@ -1,21 +1,30 @@
+import axios from 'axios';
+import { createWriteStream, mkdirSync } from 'fs';
+import { join } from 'path';
 import TelegramBot from 'node-telegram-bot-api';
-import { PositionModel } from '../models/Position';
-import { CreatePositionRequest } from '../types';
+import { v4 as uuidv4 } from 'uuid';
+import { DatabaseManager } from '../models/database';
+import { Post } from '../types';
 
 export interface TelegramConfig {
   token: string;
-  pollingInterval?: number; // milliseconds, defaults to 1000ms
+  pollingInterval?: number;
 }
+
+const MEDIA_DIR = join(__dirname, '../../data/media');
 
 export class TelegramBotService {
   private bot: TelegramBot | null = null;
-  private positionModel: PositionModel;
   private config: TelegramConfig;
+  private db: DatabaseManager;
   private isPolling: boolean = false;
 
   constructor(config: TelegramConfig) {
     this.config = config;
-    this.positionModel = new PositionModel();
+    this.db = DatabaseManager.getInstance();
+    try {
+      mkdirSync(MEDIA_DIR, { recursive: true });
+    } catch {}
   }
 
   public initialize(): void {
@@ -25,17 +34,14 @@ export class TelegramBotService {
     }
 
     try {
-      // Initialize bot with polling enabled
-      this.bot = new TelegramBot(this.config.token, { 
+      this.bot = new TelegramBot(this.config.token, {
         polling: {
           interval: this.config.pollingInterval || 1000,
           autoStart: false
         }
       });
 
-      // Set up message handlers
       this.setupMessageHandlers();
-      
       console.log('✅ Telegram bot initialized successfully');
     } catch (error) {
       console.error('❌ Failed to initialize Telegram bot:', error);
@@ -43,244 +49,164 @@ export class TelegramBotService {
   }
 
   public async startPolling(): Promise<void> {
-    if (!this.bot) {
-      throw new Error('Bot not initialized');
-    }
+    if (!this.bot) throw new Error('Bot not initialized');
+    if (this.isPolling) return;
 
-    if (this.isPolling) {
-      console.log('📱 Telegram bot polling already started');
-      return;
-    }
-
-    try {
-      await this.bot.startPolling();
-      this.isPolling = true;
-      console.log('🚀 Telegram bot polling started');
-    } catch (error) {
-      console.error('❌ Failed to start polling:', error);
-      throw error;
-    }
+    await this.bot.startPolling();
+    this.isPolling = true;
+    console.log('🚀 Telegram bot polling started');
   }
 
   public async stopPolling(): Promise<void> {
-    if (!this.bot || !this.isPolling) {
-      return;
-    }
-
-    try {
-      await this.bot.stopPolling();
-      this.isPolling = false;
-      console.log('⏹️  Telegram bot polling stopped');
-    } catch (error) {
-      console.error('❌ Failed to stop polling:', error);
-      throw error;
-    }
+    if (!this.bot || !this.isPolling) return;
+    await this.bot.stopPolling();
+    this.isPolling = false;
+    console.log('⏹️  Telegram bot polling stopped');
   }
 
   private setupMessageHandlers(): void {
     if (!this.bot) return;
 
-    // Handle location messages
+    this.bot.on('photo', async (msg) => {
+      const chatId = msg.chat.id;
+      const username = msg.from?.username || msg.from?.first_name || 'Unknown';
+      try {
+        // Largest photo is last in the array
+        const photo = msg.photo![msg.photo!.length - 1];
+        const mediaPath = await this.downloadFile(photo.file_id, 'jpg');
+        await this.savePost({
+          type: 'photo',
+          caption: msg.caption,
+          media_path: mediaPath,
+          telegram_user: username,
+        });
+        await this.sendMessage(chatId, '✅ Foto sparat i flödet!');
+      } catch (error) {
+        console.error('Error handling photo:', error);
+        await this.sendMessage(chatId, '❌ Kunde inte spara fotot.');
+      }
+    });
+
+    this.bot.on('video', async (msg) => {
+      const chatId = msg.chat.id;
+      const username = msg.from?.username || msg.from?.first_name || 'Unknown';
+      try {
+        const mediaPath = await this.downloadFile(msg.video!.file_id, 'mp4');
+        await this.savePost({
+          type: 'video',
+          caption: msg.caption,
+          media_path: mediaPath,
+          telegram_user: username,
+        });
+        await this.sendMessage(chatId, '✅ Video sparad i flödet!');
+      } catch (error) {
+        console.error('Error handling video:', error);
+        await this.sendMessage(chatId, '❌ Kunde inte spara videon.');
+      }
+    });
+
     this.bot.on('location', async (msg) => {
       const chatId = msg.chat.id;
-      const userId = msg.from?.id;
       const username = msg.from?.username || msg.from?.first_name || 'Unknown';
-
       try {
-        if (msg.location) {
-          await this.handleLocationMessage(chatId, msg.location, username);
-        }
+        await this.savePost({
+          type: 'text',
+          caption: '📍 Platsuppdatering',
+          latitude: msg.location!.latitude,
+          longitude: msg.location!.longitude,
+          telegram_user: username,
+        });
+        await this.sendMessage(chatId, `✅ Plats sparad! (${msg.location!.latitude.toFixed(4)}, ${msg.location!.longitude.toFixed(4)})`);
       } catch (error) {
-        console.error('Error handling location message:', error);
-        await this.sendMessage(chatId, '❌ Sorry, something went wrong processing your location.');
+        console.error('Error handling location:', error);
+        await this.sendMessage(chatId, '❌ Kunde inte spara platsen.');
       }
     });
 
-    // Handle text messages
     this.bot.on('message', async (msg) => {
-      // Skip if it's a location message (handled above)
-      if (msg.location) return;
+      if (msg.photo || msg.video || msg.location) return;
 
       const chatId = msg.chat.id;
-      const userId = msg.from?.id;
       const username = msg.from?.username || msg.from?.first_name || 'Unknown';
 
+      if (!msg.text) return;
+
+      if (msg.text.startsWith('/')) {
+        await this.handleCommand(chatId, msg.text.toLowerCase());
+        return;
+      }
+
       try {
-        if (msg.text) {
-          await this.handleTextMessage(chatId, msg.text, username);
-        }
+        await this.savePost({
+          type: 'text',
+          caption: msg.text,
+          telegram_user: username,
+        });
+        await this.sendMessage(chatId, '✅ Meddelande sparat i flödet!');
       } catch (error) {
-        console.error('Error handling text message:', error);
-        await this.sendMessage(chatId, '❌ Sorry, something went wrong processing your message.');
+        console.error('Error handling text:', error);
+        await this.sendMessage(chatId, '❌ Kunde inte spara meddelandet.');
       }
     });
 
-    // Handle polling errors
     this.bot.on('polling_error', (error) => {
       console.error('Telegram polling error:', error);
     });
   }
 
-  private async handleLocationMessage(
-    chatId: number, 
-    location: { latitude: number; longitude: number }, 
-    username: string
-  ): Promise<void> {
-    try {
-      // Create new position from location
-      const positionRequest: CreatePositionRequest = {
-        latitude: location.latitude,
-        longitude: location.longitude
-      };
+  private async downloadFile(fileId: string, ext: string): Promise<string> {
+    const fileLink = await this.bot!.getFileLink(fileId);
+    const filename = `${uuidv4()}.${ext}`;
+    const filepath = join(MEDIA_DIR, filename);
 
-      const position = await this.positionModel.create(positionRequest);
+    const response = await axios.get(fileLink, { responseType: 'stream' });
+    await new Promise<void>((resolve, reject) => {
+      const writer = createWriteStream(filepath);
+      response.data.pipe(writer);
+      writer.on('finish', resolve);
+      writer.on('error', reject);
+    });
 
-      await this.sendMessage(
-        chatId, 
-        `✅ Location added to your interrail journey!\n\n` +
-        `📍 Coordinates: ${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}\n` +
-        `🕐 Time: ${new Date().toLocaleString()}\n\n` +
-        `View on your map: http://localhost:3000`
-      );
-
-    } catch (error) {
-      console.error('Error handling location message:', error);
-      await this.sendMessage(chatId, '❌ Failed to add location to your journey.');
-    }
+    return filename;
   }
 
-  private async handleTextMessage(chatId: number, text: string, username: string): Promise<void> {
-    const command = text.toLowerCase();
+  private async savePost(data: Omit<Post, 'id' | 'timestamp'>): Promise<void> {
+    const id = uuidv4();
+    const timestamp = new Date().toISOString();
 
-    // Handle commands
-    if (command.startsWith('/')) {
-      await this.handleCommand(chatId, command, username);
-      return;
-    }
-
-    // For regular text messages, just acknowledge since we no longer support notes
-    await this.sendMessage(
-      chatId, 
-      `📍 Thanks for the message! This bot now only supports adding locations.\n\n` +
-      `Share your location to add a new position to your journey, or use /help for more options.`
+    await this.db.run(
+      `INSERT INTO posts (id, timestamp, type, caption, media_path, latitude, longitude, telegram_user)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, timestamp, data.type, data.caption ?? null, data.media_path ?? null,
+       data.latitude ?? null, data.longitude ?? null, data.telegram_user ?? null]
     );
   }
 
-  private async handleCommand(chatId: number, command: string, username: string): Promise<void> {
+  private async handleCommand(chatId: number, command: string): Promise<void> {
     switch (command) {
       case '/start':
-        await this.sendWelcomeMessage(chatId);
+        await this.sendMessage(chatId,
+          '👋 Hej! Skicka foton, videos eller textmeddelanden så sparas de i reseflödet.\n\n' +
+          '📍 Dela din plats för att lägga till koordinater.\n' +
+          '/help – visa kommandon'
+        );
         break;
-
       case '/help':
-        await this.sendHelpMessage(chatId);
+        await this.sendMessage(chatId,
+          '📸 Foto – sparas med bildtext som bildtext\n' +
+          '🎥 Video – sparas i flödet\n' +
+          '💬 Text – sparas som textinlägg\n' +
+          '📍 Plats – sparas med koordinater\n' +
+          '/start – välkomstmeddelande'
+        );
         break;
-
-      case '/stats':
-        await this.sendStatsMessage(chatId);
-        break;
-
-      case '/latest':
-        await this.sendLatestPosition(chatId);
-        break;
-
       default:
-        await this.sendMessage(
-          chatId, 
-          `❓ Unknown command: ${command}\n\nUse /help to see available commands.`
-        );
-    }
-  }
-
-  private async sendWelcomeMessage(chatId: number): Promise<void> {
-    const message = 
-      `🚂 Welcome to your Interrail Journey Tracker!\n\n` +
-      `I can help you add locations to your travel map.\n\n` +
-      `📍 Share your location to add a new stop\n` +
-      `📊 Use /stats to see your journey statistics\n` +
-      `❓ Use /help for more commands\n\n` +
-      `🗺️ View your journey: http://localhost:3000`;
-
-    await this.sendMessage(chatId, message);
-  }
-
-  private async sendHelpMessage(chatId: number): Promise<void> {
-    const message = 
-      `🤖 Available Commands:\n\n` +
-      `📍 Share Location - Add new position to your journey\n` +
-      `/stats - View journey statistics\n` +
-      `/latest - Show your latest position\n` +
-      `/help - Show this help message\n\n` +
-      `🗺️ View your map: http://localhost:3000`;
-
-    await this.sendMessage(chatId, message);
-  }
-
-  private async sendStatsMessage(chatId: number): Promise<void> {
-    try {
-      const positions = await this.positionModel.findAll();
-      
-      if (positions.length === 0) {
-        await this.sendMessage(chatId, '📊 No journey data yet! Start by sharing your location.');
-        return;
-      }
-
-      // Calculate statistics
-      let totalDistance = 0;
-
-      for (let i = 1; i < positions.length; i++) {
-        const prev = positions[i - 1];
-        const current = positions[i];
-        totalDistance += this.positionModel.calculateDistance(
-          prev.latitude, prev.longitude,
-          current.latitude, current.longitude
-        );
-      }
-
-      const duration = positions.length > 1 
-        ? Math.ceil((new Date(positions[positions.length - 1].timestamp).getTime() - 
-                    new Date(positions[0].timestamp).getTime()) / (1000 * 60 * 60 * 24))
-        : 0;
-
-      const message = 
-        `📊 Your Interrail Journey Stats:\n\n` +
-        `🛤️ Total Distance: ${totalDistance.toFixed(1)} km\n` +
-        `📅 Duration: ${duration} days\n` +
-        `📍 Total Stops: ${positions.length}\n\n` +
-        `🗺️ View your journey: http://localhost:3000`;
-
-      await this.sendMessage(chatId, message);
-    } catch (error) {
-      console.error('Error getting stats:', error);
-      await this.sendMessage(chatId, '❌ Failed to get journey statistics.');
-    }
-  }
-
-  private async sendLatestPosition(chatId: number): Promise<void> {
-    try {
-      const latestPosition = await this.positionModel.getLatestPosition();
-      
-      if (!latestPosition) {
-        await this.sendMessage(chatId, '📍 No positions found yet! Share your location first.');
-        return;
-      }
-
-      const message = 
-        `📍 Your Latest Position:\n\n` +
-        `📊 Coordinates: ${latestPosition.latitude.toFixed(4)}, ${latestPosition.longitude.toFixed(4)}\n` +
-        `🕐 Time: ${new Date(latestPosition.timestamp).toLocaleString()}\n\n` +
-        `View on your map: http://localhost:3000`;
-
-      await this.sendMessage(chatId, message);
-    } catch (error) {
-      console.error('Error getting latest position:', error);
-      await this.sendMessage(chatId, '❌ Failed to get latest position.');
+        await this.sendMessage(chatId, `Okänt kommando: ${command}. Prova /help.`);
     }
   }
 
   private async sendMessage(chatId: number, text: string): Promise<void> {
     if (!this.bot) return;
-
     try {
       await this.bot.sendMessage(chatId, text);
     } catch (error) {
@@ -295,4 +221,4 @@ export class TelegramBotService {
   public isPollingActive(): boolean {
     return this.isPolling;
   }
-} 
+}

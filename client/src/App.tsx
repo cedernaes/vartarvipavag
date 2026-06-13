@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import InterrailMap from './components/InterrailMap';
 import LoginForm from './components/LoginForm';
+import TelegramFeed from './components/TelegramFeed';
 import TravelStats from './components/TravelStats';
 import { fakeInterrailData } from './data/fakeData';
-import { PositionService, deterministicRandomizePosition } from './services/api';
-import { Position } from './types';
+import { FeedService, PositionService, deterministicRandomizePosition } from './services/api';
+import { Position, Post } from './types';
 import ForkMeOnGithub from './components/ForkMeOnGithub';
 
 const App: React.FC = () => {
   const [positions, setPositions] = useState<Position[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -38,11 +40,18 @@ const App: React.FC = () => {
       // If local, use fake data, otherwise use API
       let data: Position[] = [];
       if (import.meta.env.DEV && !import.meta.env.VITE_API_URL) {
-        console.log('Using fake data');
+        console.log('Using fake data for positions');
         data = fakeInterrailData;
       } else {
-        console.log('Using API');
+        console.log('Using API for positions');
         data = await PositionService.getAllPositions();
+      }
+
+      try {
+        const feedData = await FeedService.getFeed();
+        setPosts(feedData);
+      } catch {
+        // Feed unavailable in local dev without server
       }
 
       setPositions(deterministicRandomizePosition(data));
@@ -153,10 +162,11 @@ const App: React.FC = () => {
           </div>
         ) : (
           <>
-            <InterrailMap 
-              positions={positions} 
+            <InterrailMap
+              positions={positions}
             />
             <TravelStats positions={positions} />
+            <TelegramFeed posts={posts} />
           </>
         )}
       </main>
