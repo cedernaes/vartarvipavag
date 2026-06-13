@@ -50,6 +50,13 @@ const TelegramFeed: React.FC<Props> = ({ posts }) => {
             )}
             {post.type === 'video' && post.media_path && (
               <div className="feed-cell__video-thumb">
+                <video
+                  src={FeedService.getMediaUrl(post.media_path)}
+                  preload="metadata"
+                  muted
+                  playsInline
+                  className="feed-cell__video-preview"
+                />
                 <span className="feed-cell__play">▶</span>
               </div>
             )}

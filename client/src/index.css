@@ -367,6 +367,7 @@ footer {
 }
 
 .feed-cell__video-thumb {
+  position: relative;
   width: 100%;
   height: 100%;
   background: #1f2937;
@@ -375,10 +376,21 @@ footer {
   justify-content: center;
 }
 
+.feed-cell__video-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .feed-cell__play {
+  position: relative;
   font-size: 2rem;
   color: white;
   opacity: 0.85;
+  z-index: 1;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
 }
 
 .feed-cell__text-preview {
