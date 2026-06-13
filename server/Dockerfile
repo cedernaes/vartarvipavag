@@ -5,5 +5,5 @@ RUN npm ci
 COPY . .
 RUN npm run build
 EXPOSE 3001
-ENV DATABASE_PATH=/data/interrail.db
+ENV DATA_DIR=/data
 CMD ["node", "dist/server.js"]

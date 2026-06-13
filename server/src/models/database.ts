@@ -1,7 +1,7 @@
 import sqlite3 from 'sqlite3';
 import { join } from 'path';
 
-const DB_PATH = process.env.DATABASE_PATH || join(__dirname, '../../data/interrail.db');
+const DB_PATH = process.env.DATA_DIR ? join(process.env.DATA_DIR, 'interrail.db') : join(__dirname, '../../data/interrail.db');
 
 export class DatabaseManager {
   private static instance: DatabaseManager;

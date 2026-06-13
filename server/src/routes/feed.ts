@@ -8,7 +8,7 @@ import { securityMiddleware } from '../middleware/security';
 
 const router = Router();
 const db = DatabaseManager.getInstance();
-const MEDIA_DIR = join(__dirname, '../../data/media');
+const MEDIA_DIR = process.env.DATA_DIR ? join(process.env.DATA_DIR, 'media') : join(__dirname, '../../data/media');
 
 // GET /api/feed — all posts, newest first
 router.get('/', securityMiddleware.validateApiKey, async (req: Request, res: Response) => {

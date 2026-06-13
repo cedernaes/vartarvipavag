@@ -11,7 +11,7 @@ export interface TelegramConfig {
   pollingInterval?: number;
 }
 
-const MEDIA_DIR = join(__dirname, '../../data/media');
+const MEDIA_DIR = process.env.DATA_DIR ? join(process.env.DATA_DIR, 'media') : join(__dirname, '../../data/media');
 
 function isAllowed(msg: TelegramBot.Message): boolean {
   const allowedIds = process.env.TELEGRAM_ALLOWED_USER_IDS
