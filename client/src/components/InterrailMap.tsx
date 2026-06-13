@@ -53,7 +53,6 @@ const mapStyle = `
     background: white;
     padding: 12px 16px;
     border-radius: 8px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     font-family: 'Courier New', 'Source Code Pro', 'Inconsolata', 'SF Mono', 'Monaco', 'Roboto Mono', 'Source Code Pro', Courier, monospace !important;
     font-size: 14px;
     line-height: 1.4;
