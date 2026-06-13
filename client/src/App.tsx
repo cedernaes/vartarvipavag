@@ -114,8 +114,8 @@ const App: React.FC = () => {
     <div className="app">
       <header className="header">
         <div className="container">
-          <h1>Sara & Erasmus</h1>
-          <h2>Honeymoon 🏝️</h2>
+          <h1>Tågluff 2026 🚂</h1>
+          <h2>Sara & Erasmus</h2>
         </div>
       </header>
 
