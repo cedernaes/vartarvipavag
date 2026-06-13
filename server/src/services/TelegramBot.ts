@@ -13,6 +13,13 @@ export interface TelegramConfig {
 
 const MEDIA_DIR = join(__dirname, '../../data/media');
 
+function isAllowed(msg: TelegramBot.Message): boolean {
+  const allowedIds = process.env.TELEGRAM_ALLOWED_USER_IDS
+    ?.split(',')
+    .map(Number) ?? [];
+  return allowedIds.includes(msg.from?.id ?? -1);
+}
+
 export class TelegramBotService {
   private bot: TelegramBot | null = null;
   private config: TelegramConfig;
@@ -69,6 +76,7 @@ export class TelegramBotService {
 
     this.bot.on('photo', async (msg) => {
       const chatId = msg.chat.id;
+      if (!isAllowed(msg)) { await this.sendMessage(chatId, '⛔ Not authorized.'); return; }
       const username = msg.from?.username || msg.from?.first_name || 'Unknown';
       try {
         // Largest photo is last in the array
@@ -89,6 +97,7 @@ export class TelegramBotService {
 
     this.bot.on('video', async (msg) => {
       const chatId = msg.chat.id;
+      if (!isAllowed(msg)) { await this.sendMessage(chatId, '⛔ Not authorized.'); return; }
       const username = msg.from?.username || msg.from?.first_name || 'Unknown';
       try {
         const mediaPath = await this.downloadFile(msg.video!.file_id, 'mp4');
@@ -107,6 +116,7 @@ export class TelegramBotService {
 
     this.bot.on('location', async (msg) => {
       const chatId = msg.chat.id;
+      if (!isAllowed(msg)) { await this.sendMessage(chatId, '⛔ Not authorized.'); return; }
       const username = msg.from?.username || msg.from?.first_name || 'Unknown';
       try {
         await this.savePost({
@@ -127,6 +137,7 @@ export class TelegramBotService {
       if (msg.photo || msg.video || msg.location) return;
 
       const chatId = msg.chat.id;
+      if (!isAllowed(msg)) { await this.sendMessage(chatId, '⛔ Not authorized.'); return; }
       const username = msg.from?.username || msg.from?.first_name || 'Unknown';
 
       if (!msg.text) return;
