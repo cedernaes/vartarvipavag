@@ -56,7 +56,7 @@ if (process.env.TELEGRAM_BOT_TOKEN) {
 
 // Middleware
 // In production, CORS is handled by nginx. In local dev, Express handles it.
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.IS_DEV === 'true') {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const cors = require('cors');
   app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
