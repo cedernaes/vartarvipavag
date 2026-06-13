@@ -62,6 +62,7 @@ const TelegramFeed: React.FC<Props> = ({ posts }) => {
               </div>
             )}
             <div className="feed-cell__overlay">
+              {post.caption && <p className="feed-cell__caption">{post.caption}</p>}
               <time>{formatDate(post.timestamp)}</time>
             </div>
           </button>

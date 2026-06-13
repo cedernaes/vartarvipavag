@@ -64,7 +64,7 @@ body {
 
 .stat-card {
   background: white;
-  padding: 2.5rem;
+  padding: 1.5rem;
   border-radius: 8px;
   text-align: center;
 }
@@ -319,18 +319,18 @@ footer {
 .feed-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+  gap: 1.5rem;
 }
 
 @media (max-width: 600px) {
   .feed-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 }
 
 .feed-cell {
   position: relative;
-  aspect-ratio: 1;
   overflow: hidden;
   cursor: pointer;
   background: #e5e7eb;
@@ -339,12 +339,25 @@ footer {
   border-radius: 4px;
 }
 
+@media (min-width: 601px) {
+  .feed-cell {
+    aspect-ratio: 1;
+  }
+}
+
 .feed-cell img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
   transition: transform 0.2s ease;
+}
+
+@media (max-width: 600px) {
+  .feed-cell img {
+    height: auto;
+    object-fit: unset;
+  }
 }
 
 .feed-cell:hover img {
@@ -399,8 +412,8 @@ footer {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.55));
-  padding: 0.5rem 0.4rem 0.3rem;
+  background: linear-gradient(transparent, rgba(0,0,0,0.65));
+  padding: 1.5rem 0.6rem 0.4rem;
   opacity: 0;
   transition: opacity 0.2s ease;
 }
@@ -409,9 +422,20 @@ footer {
   opacity: 1;
 }
 
+.feed-cell__caption {
+  margin: 0 0 0.2rem;
+  font-size: 0.75rem;
+  color: white;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
 .feed-cell__overlay time {
   font-size: 0.65rem;
-  color: white;
+  color: rgba(255,255,255,0.8);
 }
 
 /* Modal */
