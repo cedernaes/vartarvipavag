@@ -37,8 +37,8 @@ router.get('/', securityMiddleware.validateApiKey, async (req: Request, res: Res
   }
 });
 
-// GET /api/feed/media/:filename — serve a media file
-router.get('/media/:filename', securityMiddleware.validateApiKey, (req: Request, res: Response) => {
+// GET /api/feed/media/:filename — serve a media file (public, filenames are UUIDs)
+router.get('/media/:filename', (req: Request, res: Response) => {
   const { filename } = req.params;
 
   // Prevent path traversal
