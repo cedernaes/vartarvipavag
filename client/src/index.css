@@ -28,7 +28,8 @@ body {
   padding: 2rem 0;
   margin-bottom: 2rem;
 }
-.header h1, h2 {
+.header h1,
+.header h2 {
   color: #ae3c40;
   text-align: center;
 }
@@ -122,7 +123,8 @@ body {
     padding: 0 0.5rem;
   }
 
-  .header h1, h2 {
+  .header h1,
+  .header h2 {
     font-size: 1rem;
   }
 
