@@ -62,7 +62,7 @@ const mapStyle = `
   
   .map-info-box h4 {
     margin: 0 0 6px 0;
-    color: #005A32;
+    color: #ae3c40;
     font-size: 16px;
     font-weight: bold;
   }
@@ -74,7 +74,7 @@ const mapStyle = `
   
   .map-info-box button {
     background: none;
-    color: #005A32;
+    color: #ae3c40;
     border: none;
     padding: 0;
     cursor: pointer;
@@ -86,7 +86,7 @@ const mapStyle = `
   }
   
   .map-info-box button:hover {
-    color: #004425;
+    color: #8b2c2f;
   }
 `;
 
@@ -134,7 +134,7 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
   const nightStopIcon = React.useMemo(() => L.divIcon({
     html: `
       <div style="
-        background-color: #005A32;
+        background-color: #ae3c40;
         width: 25px;
         height: 25px;
         border-radius: 50%;
@@ -407,84 +407,84 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
           style={{ height: '100%', width: '100%' }}
           ref={setMap}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        
+        {/* Journey path polyline */}
+        {positions.length > 1 && (
+          <Polyline
+            positions={polylineCoordinates}
+            color="#1f2937"
+            weight={2.5}
+            opacity={0.7}
+            dashArray="3, 6"
           />
-
-          {/* Journey path polyline */}
-          {positions.length > 1 && (
-            <Polyline
-              positions={polylineCoordinates}
-              color="#1f2937"
-              weight={2.5}
-              opacity={0.7}
-              dashArray="3, 6"
-            />
-          )}
-
-          {/* Position markers - render daily positions first, then night stops on top */}
-          {positions.map((position, _) => {
-            const positionType = getPositionType(position.id);
-
-            // Only render daily positions in this pass
-            if (positionType !== 'daily_position') return null;
-
-            return (
-              <Marker
-                key={position.id}
-                position={[position.latitude, position.longitude]}
-                icon={dailyPositionIcon}
-                zIndexOffset={100}
-              >
-                <Popup>
-                  <div style={{ minWidth: '180px' }}>
-                    <div style={{ marginBottom: '4px', fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
-                      📆 {formatDateDailyPosition(position.timestamp)}
-                    </div>
-
-                    <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
-                      📍 {position.latitude.toFixed(5)}, {position.longitude.toFixed(4)}
-                    </div>
+        )}
+        
+        {/* Position markers - render daily positions first, then night stops on top */}
+        {positions.map((position, _) => {
+          const positionType = getPositionType(position.timestamp);
+          
+          // Only render daily positions in this pass
+          if (positionType !== 'daily_position') return null;
+          
+          return (
+            <Marker
+              key={position.id}
+              position={[position.latitude, position.longitude]}
+              icon={dailyPositionIcon}
+              zIndexOffset={100}
+            >
+              <Popup>
+                <div style={{ minWidth: '180px' }}>
+                  <div style={{ marginBottom: '4px', fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
+                    📆 {formatDateDailyPosition(position.timestamp)}
                   </div>
-                </Popup>
-              </Marker>
-            );
-          })}
-
-          {/* Night stop markers - rendered after daily positions to appear on top */}
-          {positions.map((position, _) => {
-            const positionType = getPositionType(position.id);
-
-            // Only render night stops in this pass
-            if (positionType !== 'night_stop') return null;
-
-            return (
-              <Marker
-                key={`night-${position.id}`}
-                position={[position.latitude, position.longitude]}
-                icon={nightStopIcon}
-                zIndexOffset={1000}
-              >
-                <Popup>
-                  <div style={{ minWidth: '180px' }}>
-                    <h4 style={{ margin: '0 0 8px 0', color: '#005A32' }}>
-                      🌙 Nattens vila
-                    </h4>
-
-                    <div style={{ marginBottom: '4px', fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
-                      📆 {formatDateNightStop(position.timestamp)}
-                    </div>
-
-                    <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
-                      📍 {position.latitude.toFixed(5)}, {position.longitude.toFixed(4)}
-                    </div>
+                  
+                  <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
+                    📍 {position.latitude.toFixed(5)}, {position.longitude.toFixed(4)}
                   </div>
-                </Popup>
-              </Marker>
-            );
-          })}
-        </MapContainer>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
+        
+        {/* Night stop markers - rendered after daily positions to appear on top */}
+        {positions.map((position, _) => {
+          const positionType = getPositionType(position.timestamp);
+          
+          // Only render night stops in this pass
+          if (positionType !== 'night_stop') return null;
+          
+          return (
+                         <Marker
+               key={`night-${position.id}`}
+               position={[position.latitude, position.longitude]}
+               icon={nightStopIcon}
+               zIndexOffset={1000}
+             >
+              <Popup>
+                <div style={{ minWidth: '180px' }}>
+                  <h4 style={{ margin: '0 0 8px 0', color: '#ae3c40' }}>
+                    🌙 Nattens vila
+                  </h4>
+                  
+                  <div style={{ marginBottom: '4px', fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
+                    📆 {formatDateNightStop(position.timestamp)}
+                  </div>
+                  
+                  <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
+                    📍 {position.latitude.toFixed(5)}, {position.longitude.toFixed(4)}
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
+      </MapContainer>
       </div>
     </div>
   );
