@@ -3,7 +3,6 @@ import InterrailMap from './components/InterrailMap';
 import LoginForm from './components/LoginForm';
 import TelegramFeed from './components/TelegramFeed';
 import TravelStats from './components/TravelStats';
-import { fakeInterrailData } from './data/fakeData';
 import { FeedService, PositionService, deterministicRandomizePosition } from './services/api';
 import { Position, Post } from './types';
 import ForkMeOnGithub from './components/ForkMeOnGithub';
@@ -18,13 +17,6 @@ const App: React.FC = () => {
 
   // Check authentication status on app load
   useEffect(() => {
-    // If using fake data in dev mode, skip authentication
-    if (!import.meta.env.VITE_API_URL) {
-      setIsAuthenticated(true);
-      setAuthChecked(true);
-      return;
-    }
-
     // Check if user has stored API key
     const isAuth = PositionService.isAuthenticated();
     setIsAuthenticated(isAuth);
@@ -37,15 +29,7 @@ const App: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // If local, use fake data, otherwise use API
-      let data: Position[] = [];
-      if (import.meta.env.DEV && !import.meta.env.VITE_API_URL) {
-        console.log('Using fake data for positions');
-        data = fakeInterrailData;
-      } else {
-        console.log('Using API for positions');
-        data = await PositionService.getAllPositions();
-      }
+      const data: Position[] = await PositionService.getAllPositions();
 
       try {
         const feedData = await FeedService.getFeed();

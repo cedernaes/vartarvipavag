@@ -7,7 +7,7 @@
     "dev": "IS_DEV=true CLIENT_PASSWORD=testtt tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "db:init": "tsx src/scripts/init-db.ts"
+    "db:seed": "tsx src/scripts/seed-db.ts"
   },
   "dependencies": {
     "@types/mime-types": "^3.0.1",
