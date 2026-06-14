@@ -384,8 +384,23 @@ footer {
   object-fit: cover;
 }
 
+@media (max-width: 600px) {
+  .feed-cell__video-thumb {
+    height: auto;
+  }
+
+  .feed-cell__video-preview {
+    position: static;
+    height: auto;
+    object-fit: unset;
+  }
+}
+
 .feed-cell__play {
-  position: relative;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   font-size: 2rem;
   color: white;
   opacity: 0.85;

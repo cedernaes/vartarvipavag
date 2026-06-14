@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { createReadStream, existsSync } from 'fs';
+import { createReadStream, existsSync, statSync } from 'fs';
 import { join } from 'path';
 import { lookup } from 'mime-types';
 import { DatabaseManager } from '../models/database';
@@ -54,8 +54,38 @@ router.get('/media/:filename', (req: Request, res: Response) => {
   }
 
   const mimeType = lookup(filename) || 'application/octet-stream';
+  const fileSize = statSync(filepath).size;
+
   res.setHeader('Content-Type', mimeType);
   res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  // Advertise Range support — required for video playback/seeking in Firefox & Safari
+  res.setHeader('Accept-Ranges', 'bytes');
+
+  const range = req.headers.range;
+  if (range) {
+    // Parse "bytes=start-end"
+    const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+    if (!match) {
+      res.status(416).setHeader('Content-Range', `bytes */${fileSize}`).end();
+      return;
+    }
+
+    const start = match[1] ? parseInt(match[1], 10) : 0;
+    const end = match[2] ? parseInt(match[2], 10) : fileSize - 1;
+
+    if (start > end || start >= fileSize || end >= fileSize) {
+      res.status(416).setHeader('Content-Range', `bytes */${fileSize}`).end();
+      return;
+    }
+
+    res.status(206);
+    res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
+    res.setHeader('Content-Length', end - start + 1);
+    createReadStream(filepath, { start, end }).pipe(res);
+    return;
+  }
+
+  res.setHeader('Content-Length', fileSize);
   createReadStream(filepath).pipe(res);
 });
 
