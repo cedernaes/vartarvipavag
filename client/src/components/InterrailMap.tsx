@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import { Position, Post } from '../types';
+import { computeNightStopPositionIds } from '../utils/nightStops';
 
 // Fix for default markers in React-Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -189,140 +190,14 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
   const polylineCoordinates: [number, number][] = positions.map(pos => [pos.latitude, pos.longitude]);
 
   /**
-   * Pre-compute which positions are night stops by finding the position
-   * closest to the configured hour for each day in the home timezone.
-   * 
-   * We group positions by calendar day in the home timezone, then for each day,
-   * find the position with the time closest to the configured night stop hour.
-   * This handles timezone differences automatically since we convert all times
-   * to the home timezone first.
+   * Pre-compute which positions are night stops. See computeNightStopPositionIds
+   * for the full algorithm (timezone-aware grouping, one stop per night, and the
+   * requirement that the night actually ended).
    */
-  const nightStopPositionIds = React.useMemo(() => {
-    const nightStops = new Set<string>();
-
-    if (positions.length === 0) {
-      return nightStops;
-    }
-
-    /**
-     * Convert a timestamp to the home timezone and extract date components
-     */
-    const getDateInHomeTimezone = (timestamp: string): {
-      date: Date;
-      year: number;
-      month: number;
-      day: number;
-      hour: number;
-      minute: number;
-      timeOfDay: number; // Minutes since midnight
-    } => {
-      const date = new Date(timestamp);
-
-      // Use Intl.DateTimeFormat to get the date/time in the home timezone
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: configuredTimezone,
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        second: 'numeric',
-        hour12: false
-      });
-
-      const parts = formatter.formatToParts(date);
-      const year = parseInt(parts.find(p => p.type === 'year')?.value || '0', 10);
-      const month = parseInt(parts.find(p => p.type === 'month')?.value || '0', 10);
-      const day = parseInt(parts.find(p => p.type === 'day')?.value || '0', 10);
-      const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0', 10);
-      const minute = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10);
-      const second = parseInt(parts.find(p => p.type === 'second')?.value || '0', 10);
-
-      // Calculate minutes since midnight
-      const timeOfDay = hour * 60 + minute + second / 60;
-
-      return {
-        date,
-        year,
-        month,
-        day,
-        hour,
-        minute,
-        timeOfDay
-      };
-    };
-
-    // Group positions by "night" - a night spans from evening of day N to morning of day N+1
-    // A position at 02:00 on day N belongs to the night between day N-1 and day N
-    // A position at 18:00 on day N belongs to the night between day N and day N+1
-    const positionsByNight = new Map<string, Array<{ position: Position; timeOfDay: number }>>();
-
-    positions.forEach(position => {
-      const dateInfo = getDateInHomeTimezone(position.timestamp);
-      const dayKey = `${dateInfo.year}-${dateInfo.month}-${dateInfo.day}`;
-
-      // Determine which "night" this position belongs to
-      // A night spans from evening (18:00) of day N to morning (12:00) of day N+1
-      // If it's early morning (before noon), it belongs to the previous day's night
-      // Otherwise, it belongs to the current day's night (which ends the next morning)
-      let nightKey: string;
-      if (dateInfo.hour < 12) {
-        // Early morning position (like 02:00) belongs to the previous day's night
-        // Calculate previous day by creating a new date and subtracting a day
-        const date = new Date(dateInfo.date);
-        date.setTime(date.getTime() - 24 * 60 * 60 * 1000);
-        const prevDateInfo = getDateInHomeTimezone(date.toISOString());
-        nightKey = `${prevDateInfo.year}-${prevDateInfo.month}-${prevDateInfo.day}`;
-      } else {
-        // Afternoon/evening position belongs to the current day's night
-        nightKey = dayKey;
-      }
-
-      if (!positionsByNight.has(nightKey)) {
-        positionsByNight.set(nightKey, []);
-      }
-
-      positionsByNight.get(nightKey)!.push({
-        position,
-        timeOfDay: dateInfo.timeOfDay
-      });
-    });
-
-    // For each night, find the position closest to the configured night stop hour
-    const targetMinutes = configuredNightStopHour * 60;
-
-    positionsByNight.forEach((nightPositions) => {
-      if (nightPositions.length === 0) return;
-
-      // Find the position with the smallest time difference from target hour
-      // Handle circular time: positions late at night might be closer to early morning target
-      let closestPosition = nightPositions[0];
-      let minDifference = Infinity;
-
-      nightPositions.forEach(({ position, timeOfDay }) => {
-        // Calculate the minimum circular distance (considering wrap-around at midnight)
-        // For example, if target is 02:00 (120 min) and position is 23:30 (1410 min),
-        // the distance is min(1290, 30) = 30 minutes (wrapping to next day)
-        const diffForward = Math.abs(timeOfDay - targetMinutes);
-        const diffWrapNext = Math.abs((timeOfDay + 24 * 60) - targetMinutes);
-        const diffWrapPrev = timeOfDay > targetMinutes
-          ? Math.abs(timeOfDay - (targetMinutes + 24 * 60))
-          : Infinity;
-
-        const minDiff = Math.min(diffForward, diffWrapNext, diffWrapPrev);
-
-        if (minDiff < minDifference) {
-          minDifference = minDiff;
-          closestPosition = { position, timeOfDay };
-        }
-      });
-
-      // Only add ONE night stop per night
-      nightStops.add(closestPosition.position.id);
-    });
-
-    return nightStops;
-  }, [positions, configuredTimezone, configuredNightStopHour]);
+  const nightStopPositionIds = React.useMemo(
+    () => computeNightStopPositionIds(positions, configuredTimezone, configuredNightStopHour),
+    [positions, configuredTimezone, configuredNightStopHour]
+  );
 
   /**
    * Determine if a position is a night stop
