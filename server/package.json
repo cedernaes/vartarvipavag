@@ -4,7 +4,7 @@
   "description": "Backend API server for interrail tracking",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "IS_DEV=true tsx watch src/server.ts",
+    "dev": "IS_DEV=true CLIENT_PASSWORD=testtt tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "db:init": "tsx src/scripts/init-db.ts"
