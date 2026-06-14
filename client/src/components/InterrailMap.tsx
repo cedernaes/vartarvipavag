@@ -424,8 +424,8 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
         
         {/* Position markers - render daily positions first, then night stops on top */}
         {positions.map((position, _) => {
-          const positionType = getPositionType(position.timestamp);
-          
+          const positionType = getPositionType(position.id);
+
           // Only render daily positions in this pass
           if (positionType !== 'daily_position') return null;
           
@@ -453,8 +453,8 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
         
         {/* Night stop markers - rendered after daily positions to appear on top */}
         {positions.map((position, _) => {
-          const positionType = getPositionType(position.timestamp);
-          
+          const positionType = getPositionType(position.id);
+
           // Only render night stops in this pass
           if (positionType !== 'night_stop') return null;
           
