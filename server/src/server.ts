@@ -69,6 +69,9 @@ app.use(express.urlencoded({ extended: true }));
 // Trust proxy for accurate IP detection
 app.set('trust proxy', true);
 
+// Respond to CORS preflight requests (nginx handles headers, Express handles the route)
+app.options('*', (req, res) => res.sendStatus(204));
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({
