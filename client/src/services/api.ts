@@ -1,7 +1,7 @@
 import axios from 'axios';
 import seedrandom from 'seedrandom';
 import { ApiResponse, Position, Post } from '../types';
-import { apiKey, hashPassword, setApiKey } from './auth';
+import { apiKey, setApiKey } from './auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -101,13 +101,8 @@ export function deterministicRandomizePosition(positions: Position[]): Position[
 
 export class PositionService {
   static async login(password: string): Promise<void> {
-    try {
-      const hashedPassword = await hashPassword(password);
-      setApiKey(hashedPassword);
-    } catch (error) {
-      console.error('Error during login:', error);
-      throw error;
-    }
+    const response = await api.post<{ success: boolean; apiKey: string }>('/api/login', { password });
+    setApiKey(response.data.apiKey);
   }
 
   static async logout(): Promise<void> {

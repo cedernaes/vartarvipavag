@@ -41,6 +41,10 @@ export class SecurityMiddleware {
     next();
   };
 
+  public getApiKey(): string | undefined {
+    return this.config.apiKey;
+  }
+
   public validateApiKey = (req: Request, res: Response, next: NextFunction): void => {
     // Check API key if enabled
     if (this.config.apiKey) {

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import dotenv from 'dotenv';
 import express from 'express';
 import { mkdirSync } from 'fs';
@@ -6,6 +7,7 @@ import { join } from 'path';
 import { Server } from 'socket.io';
 
 import { DatabaseManager } from './models/database';
+import { securityMiddleware } from './middleware/security';
 import feedRouter from './routes/feed';
 import positionsRouter from './routes/positions';
 import telegramRouter, { initializeTelegramBot } from './routes/telegram';
@@ -59,7 +61,7 @@ if (process.env.TELEGRAM_BOT_TOKEN) {
 if (process.env.IS_DEV === 'true') {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const cors = require('cors');
-  app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
+  app.use(cors({ origin: true }));
 }
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -74,6 +76,26 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     service: 'vartarvipavag-server'
   });
+});
+
+// Login endpoint — validates password and returns the API key
+app.post('/api/login', (req, res) => {
+  const { password } = req.body;
+  if (!password) {
+    res.status(400).json({ success: false, error: 'Password required' });
+    return;
+  }
+  const expectedKey = securityMiddleware.getApiKey();
+  if (!expectedKey) {
+    res.status(500).json({ success: false, error: 'Server not configured with a password' });
+    return;
+  }
+  const hashed = crypto.createHash('sha256').update(password).digest('hex');
+  if (hashed !== expectedKey) {
+    res.status(401).json({ success: false, error: 'Incorrect password' });
+    return;
+  }
+  res.json({ success: true, apiKey: hashed });
 });
 
 // API routes
