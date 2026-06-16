@@ -2,9 +2,11 @@ import axios from 'axios';
 import { createWriteStream, mkdirSync } from 'fs';
 import { join } from 'path';
 import TelegramBot from 'node-telegram-bot-api';
+import { lookup as mimeLookup } from 'mime-types';
 import { v4 as uuidv4 } from 'uuid';
 import { DatabaseManager } from '../models/database';
 import { Post } from '../types';
+import { extractMetadata } from './MetadataExtractor';
 
 export interface TelegramConfig {
   token: string;
@@ -82,13 +84,23 @@ export class TelegramBotService {
         // Largest photo is last in the array
         const photo = msg.photo![msg.photo!.length - 1];
         const mediaPath = await this.downloadFile(photo.file_id, 'jpg');
+        // Photos sent with "Include metadata" keep their EXIF; pull capture
+        // time and GPS so the post reflects when/where it was taken rather
+        // than when it reached the bot.
+        const { latitude, longitude, capturedAt } = await extractMetadata(join(MEDIA_DIR, mediaPath));
         await this.savePost({
           type: 'photo',
           caption: msg.caption,
           media_path: mediaPath,
+          latitude,
+          longitude,
           telegram_user: username,
+          timestamp: capturedAt,
         });
-        await this.sendMessage(chatId, '✅ Foto sparat i flödet!');
+        const coordsMsg = latitude != null && longitude != null
+          ? ` Koordinater: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}.`
+          : '';
+        await this.sendMessage(chatId, `✅ Foto sparat i flödet!${coordsMsg}`);
       } catch (error) {
         console.error('Error handling photo:', error);
         await this.sendMessage(chatId, '❌ Kunde inte spara fotot.');
@@ -101,16 +113,65 @@ export class TelegramBotService {
       const username = msg.from?.username || msg.from?.first_name || 'Unknown';
       try {
         const mediaPath = await this.downloadFile(msg.video!.file_id, 'mp4');
+        const { latitude, longitude, capturedAt } = await extractMetadata(join(MEDIA_DIR, mediaPath));
         await this.savePost({
           type: 'video',
           caption: msg.caption,
           media_path: mediaPath,
+          latitude,
+          longitude,
           telegram_user: username,
+          timestamp: capturedAt,
         });
-        await this.sendMessage(chatId, '✅ Video sparad i flödet!');
+        const coordsMsg = latitude != null && longitude != null
+          ? ` Koordinater: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}.`
+          : '';
+        await this.sendMessage(chatId, `✅ Video sparad i flödet!${coordsMsg}`);
       } catch (error) {
         console.error('Error handling video:', error);
         await this.sendMessage(chatId, '❌ Kunde inte spara videon.');
+      }
+    });
+
+    this.bot.on('document', async (msg) => {
+      const chatId = msg.chat.id;
+      if (!isAllowed(msg)) { await this.sendMessage(chatId, '⛔ Not authorized.'); return; }
+      const username = msg.from?.username || msg.from?.first_name || 'Unknown';
+      const doc = msg.document!;
+      const mimeType = doc.mime_type ?? '';
+
+      const isImage = mimeType.startsWith('image/');
+      const isVideo = mimeType.startsWith('video/');
+      if (!isImage && !isVideo) {
+        await this.sendMessage(chatId, '⚠️ Bara bilder och videor stöds.');
+        return;
+      }
+
+      const ext = (mimeLookup(mimeType) || mimeType.split('/')[1] || 'bin') as string;
+      const postType: Post['type'] = isImage ? 'photo' : 'video';
+
+      try {
+        const filename = await this.downloadFile(doc.file_id, ext);
+        const filepath = join(MEDIA_DIR, filename);
+        const { latitude, longitude, capturedAt } = await extractMetadata(filepath);
+
+        await this.savePost({
+          type: postType,
+          caption: msg.caption,
+          media_path: filename,
+          latitude,
+          longitude,
+          telegram_user: username,
+          timestamp: capturedAt,
+        });
+
+        const coordsMsg = latitude != null && longitude != null
+          ? ` Koordinater: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}.`
+          : '';
+        await this.sendMessage(chatId, `✅ ${isImage ? 'Foto' : 'Video'} sparat i flödet!${coordsMsg}`);
+      } catch (error) {
+        console.error('Error handling document:', error);
+        await this.sendMessage(chatId, `❌ Kunde inte spara ${isImage ? 'fotot' : 'videon'}.`);
       }
     });
 
@@ -134,7 +195,7 @@ export class TelegramBotService {
     });
 
     this.bot.on('message', async (msg) => {
-      if (msg.photo || msg.video || msg.location) return;
+      if (msg.photo || msg.video || msg.location || msg.document) return;
 
       const chatId = msg.chat.id;
       if (!isAllowed(msg)) { await this.sendMessage(chatId, '⛔ Not authorized.'); return; }
@@ -181,9 +242,9 @@ export class TelegramBotService {
     return filename;
   }
 
-  private async savePost(data: Omit<Post, 'id' | 'timestamp'>): Promise<void> {
+  private async savePost(data: Omit<Post, 'id' | 'timestamp'> & { timestamp?: string }): Promise<void> {
     const id = uuidv4();
-    const timestamp = new Date().toISOString();
+    const timestamp = data.timestamp ?? new Date().toISOString();
 
     await this.db.run(
       `INSERT INTO posts (id, timestamp, type, caption, media_path, latitude, longitude, telegram_user)
