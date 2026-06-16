@@ -22,7 +22,7 @@ const TelegramFeed: React.FC<Props> = ({ posts }) => {
 
   if (posts.length === 0) {
     return (
-      <section className="feed-section">
+      <section id="feed" className="feed-section">
         <h2>Reseflöde</h2>
         <p className="feed-empty">Inga inlägg än — skicka ett foto eller meddelande via Telegram!</p>
       </section>
@@ -30,7 +30,7 @@ const TelegramFeed: React.FC<Props> = ({ posts }) => {
   }
 
   return (
-    <section className="feed-section">
+    <section id="feed" className="feed-section">
       <h2>Reseflöde</h2>
 
       <div className="feed-grid">

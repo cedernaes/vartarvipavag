@@ -148,6 +148,7 @@ const App: React.FC = () => {
           <>
             <InterrailMap
               positions={positions}
+              posts={posts}
             />
             <TravelStats positions={positions} />
             <TelegramFeed posts={posts} />
