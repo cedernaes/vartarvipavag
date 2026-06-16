@@ -84,13 +84,23 @@ export class TelegramBotService {
         // Largest photo is last in the array
         const photo = msg.photo![msg.photo!.length - 1];
         const mediaPath = await this.downloadFile(photo.file_id, 'jpg');
+        // Photos sent with "Include metadata" keep their EXIF; pull capture
+        // time and GPS so the post reflects when/where it was taken rather
+        // than when it reached the bot.
+        const { latitude, longitude, capturedAt } = await extractMetadata(join(MEDIA_DIR, mediaPath));
         await this.savePost({
           type: 'photo',
           caption: msg.caption,
           media_path: mediaPath,
+          latitude,
+          longitude,
           telegram_user: username,
+          timestamp: capturedAt,
         });
-        await this.sendMessage(chatId, '✅ Foto sparat i flödet!');
+        const coordsMsg = latitude != null && longitude != null
+          ? ` Koordinater: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}.`
+          : '';
+        await this.sendMessage(chatId, `✅ Foto sparat i flödet!${coordsMsg}`);
       } catch (error) {
         console.error('Error handling photo:', error);
         await this.sendMessage(chatId, '❌ Kunde inte spara fotot.');
@@ -103,13 +113,20 @@ export class TelegramBotService {
       const username = msg.from?.username || msg.from?.first_name || 'Unknown';
       try {
         const mediaPath = await this.downloadFile(msg.video!.file_id, 'mp4');
+        const { latitude, longitude, capturedAt } = await extractMetadata(join(MEDIA_DIR, mediaPath));
         await this.savePost({
           type: 'video',
           caption: msg.caption,
           media_path: mediaPath,
+          latitude,
+          longitude,
           telegram_user: username,
+          timestamp: capturedAt,
         });
-        await this.sendMessage(chatId, '✅ Video sparad i flödet!');
+        const coordsMsg = latitude != null && longitude != null
+          ? ` Koordinater: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}.`
+          : '';
+        await this.sendMessage(chatId, `✅ Video sparad i flödet!${coordsMsg}`);
       } catch (error) {
         console.error('Error handling video:', error);
         await this.sendMessage(chatId, '❌ Kunde inte spara videon.');
@@ -162,40 +179,15 @@ export class TelegramBotService {
       const chatId = msg.chat.id;
       if (!isAllowed(msg)) { await this.sendMessage(chatId, '⛔ Not authorized.'); return; }
       const username = msg.from?.username || msg.from?.first_name || 'Unknown';
-      const { latitude, longitude } = msg.location!;
-
-      // Photo sent with "Include metadata": node-telegram-bot-api resolves the
-      // event type by the first matching key in its type list; 'location' (index 12)
-      // beats 'photo' (index 19), so these messages only fire the location event.
-      if (msg.photo) {
-        try {
-          const photo = msg.photo[msg.photo.length - 1];
-          const mediaPath = await this.downloadFile(photo.file_id, 'jpg');
-          await this.savePost({
-            type: 'photo',
-            caption: msg.caption,
-            media_path: mediaPath,
-            latitude,
-            longitude,
-            telegram_user: username,
-          });
-          await this.sendMessage(chatId, `✅ Foto sparat med koordinater! (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
-        } catch (error) {
-          console.error('Error handling photo with metadata:', error);
-          await this.sendMessage(chatId, '❌ Kunde inte spara fotot.');
-        }
-        return;
-      }
-
       try {
         await this.savePost({
           type: 'text',
           caption: '📍 Platsuppdatering',
-          latitude,
-          longitude,
+          latitude: msg.location!.latitude,
+          longitude: msg.location!.longitude,
           telegram_user: username,
         });
-        await this.sendMessage(chatId, `✅ Plats sparad! (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
+        await this.sendMessage(chatId, `✅ Plats sparad! (${msg.location!.latitude.toFixed(4)}, ${msg.location!.longitude.toFixed(4)})`);
       } catch (error) {
         console.error('Error handling location:', error);
         await this.sendMessage(chatId, '❌ Kunde inte spara platsen.');
