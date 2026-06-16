@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import L from 'leaflet';
-import { Position } from '../types';
+import { Position, Post } from '../types';
 
 // Fix for default markers in React-Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -49,14 +49,26 @@ const mapStyle = `
   }
   
   /* Info box styling */
+  .map-info-boxes {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 600px) {
+    .map-info-boxes {
+      flex-direction: column;
+    }
+  }
+
   .map-info-box {
+    flex: 1;
     background: white;
     padding: 12px 16px;
     border-radius: 8px;
     font-family: 'Courier New', 'Source Code Pro', 'Inconsolata', 'SF Mono', 'Monaco', 'Roboto Mono', 'Source Code Pro', Courier, monospace !important;
     font-size: 14px;
     line-height: 1.4;
-    margin-bottom: 16px;
   }
   
   .map-info-box h4 {
@@ -91,12 +103,14 @@ const mapStyle = `
 
 interface InterrailMapProps {
   positions: Position[];
+  posts?: Post[];
   homeTimezone?: string; // IANA timezone (e.g., "Europe/Stockholm")
   nightStopHour?: number; // Hour of day for night stop detection (0-23)
 }
 
 const InterrailMap: React.FC<InterrailMapProps> = ({
   positions,
+  posts,
   homeTimezone,
   nightStopHour
 }) => {
@@ -118,6 +132,9 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
 
   // Get the latest position (last in array)
   const latestPosition = positions[positions.length - 1];
+
+  // Get the latest feed post (posts are sorted newest first)
+  const latestPost = posts && posts.length > 0 ? posts[0] : null;
 
   // Function to pan to latest marker
   const panToLatestMarker = () => {
@@ -389,13 +406,23 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
 
   return (
     <div>
-      {/* Info box above map */}
+      {/* Info boxes above map */}
       {latestPosition && (
-        <div className="map-info-box">
-          <h4>📍 Senaste uppdatering</h4>
-          <p>
-            {formatDateInfoBox(latestPosition.timestamp)} vid {latestPosition.latitude.toFixed(5)}, {latestPosition.longitude.toFixed(4)} - <button onClick={panToLatestMarker}>Se på karta</button>
-          </p>
+        <div className="map-info-boxes">
+          <div className="map-info-box">
+            <h4>📍 Senaste plats</h4>
+            <p>
+              {formatDateInfoBox(latestPosition.timestamp)} - <button onClick={panToLatestMarker}>Se på karta</button>
+            </p>
+          </div>
+          {latestPost && (
+            <div className="map-info-box">
+              <h4>📸 Senaste uppdatering</h4>
+              <p>
+                {formatDateInfoBox(latestPost.timestamp)} - <button onClick={() => document.getElementById('feed')?.scrollIntoView({ behavior: 'smooth' })}>Se uppdatering</button>
+              </p>
+            </div>
+          )}
         </div>
       )}
 
