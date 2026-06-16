@@ -162,15 +162,40 @@ export class TelegramBotService {
       const chatId = msg.chat.id;
       if (!isAllowed(msg)) { await this.sendMessage(chatId, '⛔ Not authorized.'); return; }
       const username = msg.from?.username || msg.from?.first_name || 'Unknown';
+      const { latitude, longitude } = msg.location!;
+
+      // Photo sent with "Include metadata": node-telegram-bot-api resolves the
+      // event type by the first matching key in its type list; 'location' (index 12)
+      // beats 'photo' (index 19), so these messages only fire the location event.
+      if (msg.photo) {
+        try {
+          const photo = msg.photo[msg.photo.length - 1];
+          const mediaPath = await this.downloadFile(photo.file_id, 'jpg');
+          await this.savePost({
+            type: 'photo',
+            caption: msg.caption,
+            media_path: mediaPath,
+            latitude,
+            longitude,
+            telegram_user: username,
+          });
+          await this.sendMessage(chatId, `✅ Foto sparat med koordinater! (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
+        } catch (error) {
+          console.error('Error handling photo with metadata:', error);
+          await this.sendMessage(chatId, '❌ Kunde inte spara fotot.');
+        }
+        return;
+      }
+
       try {
         await this.savePost({
           type: 'text',
           caption: '📍 Platsuppdatering',
-          latitude: msg.location!.latitude,
-          longitude: msg.location!.longitude,
+          latitude,
+          longitude,
           telegram_user: username,
         });
-        await this.sendMessage(chatId, `✅ Plats sparad! (${msg.location!.latitude.toFixed(4)}, ${msg.location!.longitude.toFixed(4)})`);
+        await this.sendMessage(chatId, `✅ Plats sparad! (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
       } catch (error) {
         console.error('Error handling location:', error);
         await this.sendMessage(chatId, '❌ Kunde inte spara platsen.');
