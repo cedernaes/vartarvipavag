@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+import React, { useEffect, useState, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { Position, Post } from '../types';
 import { computeNightStopPositionIds } from '../utils/nightStops';
@@ -43,6 +43,9 @@ const mapStyle = `
   
   /* Ensure consistent marker layering */
   .night-stop-marker {
+    z-index: 1000 !important;
+  }
+  .night-stop-cluster {
     z-index: 1000 !important;
   }
   .daily-position-marker {
@@ -101,6 +104,122 @@ const mapStyle = `
     color: #8b2c2f;
   }
 `;
+
+const CLUSTER_RADIUS_PX = 20;
+
+function NightStopClusters({
+  positions,
+  nightStopPositionIds,
+  singleIcon,
+  formatDate,
+}: {
+  positions: Position[];
+  nightStopPositionIds: Set<string>;
+  singleIcon: L.DivIcon;
+  formatDate: (d: string) => string;
+}) {
+  const map = useMap();
+  const [zoom, setZoom] = useState(() => map.getZoom());
+
+  useMapEvents({ zoomend: () => setZoom(map.getZoom()) });
+
+  const clusters = useMemo(() => {
+    const nightStops = positions.filter(p => nightStopPositionIds.has(p.id));
+
+    const withPixels = nightStops.map(pos => ({
+      pos,
+      px: map.project([pos.latitude, pos.longitude], zoom),
+    }));
+
+    const assigned = new Set<string>();
+    const result: { lat: number; lng: number; count: number; items: Position[]; icon: L.DivIcon }[] = [];
+
+    for (const item of withPixels) {
+      if (assigned.has(item.pos.id)) continue;
+
+      const group = withPixels.filter(other => {
+        if (assigned.has(other.pos.id)) return false;
+        const dx = item.px.x - other.px.x;
+        const dy = item.px.y - other.px.y;
+        return Math.sqrt(dx * dx + dy * dy) <= CLUSTER_RADIUS_PX;
+      });
+
+      group.forEach(g => assigned.add(g.pos.id));
+
+      const lat = group.reduce((s, g) => s + g.pos.latitude, 0) / group.length;
+      const lng = group.reduce((s, g) => s + g.pos.longitude, 0) / group.length;
+      const count = group.length;
+
+      const icon = count === 1
+        ? singleIcon
+        : L.divIcon({
+            html: `
+              <div style="
+                background-color: #ae3c40;
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                border: 2px solid white;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: bold;
+                font-size: 14px;
+                font-family: 'Courier New', monospace;
+              ">${count}</div>
+            `,
+            className: 'night-stop-cluster',
+            iconSize: [36, 36],
+            iconAnchor: [18, 18],
+            popupAnchor: [0, -18],
+          });
+
+      result.push({ lat, lng, count, items: group.map(g => g.pos), icon });
+    }
+
+    return result;
+  }, [map, zoom, positions, nightStopPositionIds, singleIcon]);
+
+  return (
+    <>
+      {clusters.map((cluster, i) => (
+        <Marker
+          key={i}
+          position={[cluster.lat, cluster.lng]}
+          icon={cluster.icon}
+          zIndexOffset={1000}
+        >
+          <Popup>
+            <div style={{ minWidth: '180px' }}>
+              {cluster.count === 1 ? (
+                <>
+                  <h4 style={{ margin: '0 0 8px 0', color: '#ae3c40' }}>🌙 Nattens vila</h4>
+                  <div style={{ marginBottom: '4px', fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
+                    📆 {formatDate(cluster.items[0].timestamp)}
+                  </div>
+                  <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
+                    📍 {cluster.items[0].latitude.toFixed(5)}, {cluster.items[0].longitude.toFixed(4)}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h4 style={{ margin: '0 0 8px 0', color: '#ae3c40' }}>🌙 {cluster.count} nätter</h4>
+                  {cluster.items.map((pos, j) => (
+                    <div key={j} style={{ marginBottom: '4px', fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
+                      📆 {formatDate(pos.timestamp)}
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </>
+  );
+}
 
 interface InterrailMapProps {
   positions: Position[];
@@ -353,38 +472,13 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
           );
         })}
         
-        {/* Night stop markers - rendered after daily positions to appear on top */}
-        {positions.map((position, _) => {
-          const positionType = getPositionType(position.id);
-
-          // Only render night stops in this pass
-          if (positionType !== 'night_stop') return null;
-          
-          return (
-                         <Marker
-               key={`night-${position.id}`}
-               position={[position.latitude, position.longitude]}
-               icon={nightStopIcon}
-               zIndexOffset={1000}
-             >
-              <Popup>
-                <div style={{ minWidth: '180px' }}>
-                  <h4 style={{ margin: '0 0 8px 0', color: '#ae3c40' }}>
-                    🌙 Nattens vila
-                  </h4>
-                  
-                  <div style={{ marginBottom: '4px', fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
-                    📆 {formatDateNightStop(position.timestamp)}
-                  </div>
-                  
-                  <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
-                    📍 {position.latitude.toFixed(5)}, {position.longitude.toFixed(4)}
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
+        {/* Night stop markers - clustered by zoom level */}
+        <NightStopClusters
+          positions={positions}
+          nightStopPositionIds={nightStopPositionIds}
+          singleIcon={nightStopIcon}
+          formatDate={formatDateNightStop}
+        />
       </MapContainer>
       </div>
     </div>
