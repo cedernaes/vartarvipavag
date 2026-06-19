@@ -84,9 +84,8 @@ const TelegramFeed: React.FC<Props> = ({ posts }) => {
 
       {selected && (
         <div className="feed-modal-backdrop" onClick={() => setSelected(null)}>
+          <button className="feed-modal__close" onClick={() => setSelected(null)}>✕</button>
           <div className="feed-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="feed-modal__close" onClick={() => setSelected(null)}>✕</button>
-
             {selected.type === 'photo' && selected.media_path && (
               <img
                 src={FeedService.getMediaUrl(selected.media_path)}
@@ -103,16 +102,24 @@ const TelegramFeed: React.FC<Props> = ({ posts }) => {
               />
             )}
 
+            {selected.type === 'text' && (
+              <div className="feed-modal__text-area">
+                <p>{selected.caption}</p>
+                {selected.latitude != null && <span className="feed-cell__pin">📍</span>}
+              </div>
+            )}
+
             <div className="feed-modal__meta">
-              {selected.caption && <p className="feed-modal__caption">{selected.caption}</p>}
-              <time className="feed-modal__time">{formatDate(selected.timestamp)}</time>
+              {selected.caption && selected.type !== 'text' && (
+                <p className="feed-modal__caption">{selected.caption}</p>
+              )}
+              <time className="feed-modal__time">
+                {formatDate(selected.timestamp)}{selected.telegram_user && ` av ${selected.telegram_user}`}
+              </time>
               {selected.latitude != null && selected.longitude != null && (
                 <p className="feed-modal__coords">
                   📍 {formatCoords(selected.latitude, selected.longitude)}
                 </p>
-              )}
-              {selected.telegram_user && (
-                <p className="feed-modal__user">@{selected.telegram_user}</p>
               )}
             </div>
           </div>
