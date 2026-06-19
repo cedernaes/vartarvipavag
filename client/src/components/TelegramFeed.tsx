@@ -31,7 +31,7 @@ const TelegramFeed: React.FC<Props> = ({ posts }) => {
 
   return (
     <section id="feed" className="feed-section">
-      <h2>Reseflöde</h2>
+      <h2>Resan i bilder</h2>
 
       <div className="feed-grid">
         {posts.map((post) => (
@@ -74,7 +74,7 @@ const TelegramFeed: React.FC<Props> = ({ posts }) => {
               {post.caption && post.type !== 'text' && (
                 <p className="feed-cell__caption">{post.caption}</p>
               )}
-              <time className="feed-cell__time">{formatDate(post.timestamp)}</time>
+              <time className="feed-cell__time label">{formatDate(post.timestamp)}</time>
             </div>
           </button>
         ))}

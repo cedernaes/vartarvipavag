@@ -87,7 +87,6 @@ body {
   color: #6b7280;
   font-size: 0.9rem;
   margin: 0.25rem 0 0 0;
-  font-weight: 800;
 }
 
 .loading {
@@ -339,7 +338,7 @@ footer {
   border: none;
   padding: 10px 10px 0;
   border-radius: 1px;
-  box-shadow: 2px 4px 14px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.10);
+  /* box-shadow: 2px 4px 14px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.10); */
   display: flex;
   flex-direction: column;
   text-align: left;
@@ -348,8 +347,8 @@ footer {
 
 @media (min-width: 601px) {
   .feed-cell:hover {
-    transform: rotate(-1deg) scale(1.03);
-    box-shadow: 4px 8px 22px rgba(0,0,0,0.28);
+    transform: rotate(-0.5deg) scale(1.03);
+    box-shadow: 4px 8px 22px rgba(0,0,0,0.15);
   }
 }
 
@@ -438,7 +437,6 @@ footer {
 
 .feed-cell__text-preview p {
   margin: 0;
-  font-size: 0.8rem;
   line-height: 1.4;
   overflow: hidden;
   display: -webkit-box;
@@ -463,9 +461,9 @@ footer {
 
 .feed-cell__caption {
   margin: 0;
-  font-size: 0.72rem;
-  color: #2a2a2a;
-  line-height: 1.35;
+  color: var(--text-color);
+  font-size: medium;
+  font-weight: 500;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -474,8 +472,8 @@ footer {
 }
 
 .feed-cell__time {
-  font-size: 0.62rem;
-  color: #888;
+  color: #6b7280;
+  font-size: small;
   font-family: 'Courier New', Courier, monospace;
 }
 
