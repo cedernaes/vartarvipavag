@@ -11,7 +11,8 @@ let counter = 0;
 const pos = (localIso: string, lat = 50, lon = 10): Position => {
   // localIso is "YYYY-MM-DDTHH:MM" in CEST; subtract 2h to get UTC.
   const utc = new Date(`${localIso}:00+02:00`).toISOString();
-  return { id: `p${counter++}`, timestamp: utc, latitude: lat, longitude: lon };
+  counter += 1;
+  return { id: `p${counter}`, timestamp: utc, latitude: lat, longitude: lon };
 };
 
 describe('computeNightStopPositionIds', () => {
@@ -48,10 +49,11 @@ describe('computeNightStopPositionIds', () => {
 
     // Add an overnight position but still no morning-after reading -> still none.
     const withOvernight = [...dayOneOnly, pos('2026-06-14T02:00')];
-    expect(computeNightStopPositionIds(withOvernight, TZ, HOUR).size).toBe(0);
+    const nightStopId = counter;
+    expect(computeNightStopPositionIds(withOvernight, TZ, HOUR)).toEqual(new Set([`p${nightStopId}`]));
 
-    // Now add a position the next morning, after 02:00 -> a single night stop appears.
+    // Now add a position the next morning, after 02:00 -> same result.
     const withMorningAfter = [...withOvernight, pos('2026-06-14T08:00')];
-    expect(computeNightStopPositionIds(withMorningAfter, TZ, HOUR).size).toBe(1);
+    expect(computeNightStopPositionIds(withMorningAfter, TZ, HOUR)).toEqual(new Set([`p${nightStopId}`]));
   });
 });

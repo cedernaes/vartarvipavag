@@ -110,17 +110,13 @@ export function computeNightStopPositionIds(
       }
     });
 
-    // Only count it if the night actually ended: within this same night there
-    // must be a later position recorded the following morning (after the night
-    // stop hour, before noon, local time). Otherwise the day is still in
-    // progress and the candidate is just the most recent daytime position.
-    const candidateTime = new Date(closestPosition.position.timestamp).getTime();
-    const hasMorningAfter = nightPositions.some(({ position, timeOfDay }) => {
-      if (new Date(position.timestamp).getTime() <= candidateTime) return false;
-      const hour = Math.floor(timeOfDay / 60);
-      return hour >= nightStopHour && hour < 12;
-    });
-    if (!hasMorningAfter) return;
+    // Only count it if the night is complete: the group must contain both
+    // evening positions (hour >= 12, the day's end) and early-morning positions
+    // (hour < 12, the next day). A group with only daytime readings means the
+    // day is still in progress.
+    const hasEvening = nightPositions.some(({ timeOfDay }) => Math.floor(timeOfDay / 60) >= 12);
+    const hasMorning = nightPositions.some(({ timeOfDay }) => Math.floor(timeOfDay / 60) < 12);
+    if (!hasEvening || !hasMorning) return;
 
     // One night stop per night.
     nightStops.add(closestPosition.position.id);
