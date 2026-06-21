@@ -44,12 +44,30 @@ const mapStyle = `
   /* Ensure consistent marker layering */
   .night-stop-marker {
     z-index: 1000 !important;
+    background-color: #ae3c40;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   }
   .night-stop-cluster {
     z-index: 1000 !important;
+    background-color: #ae3c40;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
   }
   .daily-position-marker {
     z-index: 100 !important;
+    background-color: #1f2937;
+    opacity: 0.7;
+    border-radius: 50%;
   }
   
   /* Info box styling */
@@ -153,27 +171,11 @@ function NightStopClusters({
       const icon = count === 1
         ? singleIcon
         : L.divIcon({
-            html: `
-              <div style="
-                background-color: #ae3c40;
-                width: 30px;
-                height: 30px;
-                border-radius: 50%;
-                border: 2px solid white;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-weight: bold;
-                font-size: 14px;
-                font-family: 'Courier New', monospace;
-              ">${count}</div>
-            `,
+            html: String(count),
             className: 'night-stop-cluster',
-            iconSize: [36, 36],
-            iconAnchor: [18, 18],
-            popupAnchor: [0, -18],
+            iconSize: [25, 25],
+            iconAnchor: [12.5, 12.5],
+            popupAnchor: [0, -12.5],
           });
 
       result.push({ lat, lng, count, items: group.map(g => g.pos), icon });
@@ -268,18 +270,7 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
 
   // Create custom marker icons for different position types with unique class names
   const nightStopIcon = React.useMemo(() => L.divIcon({
-    html: `
-      <div style="
-        background-color: #ae3c40;
-        width: 25px;
-        height: 25px;
-        border-radius: 50%;
-        border: 2px solid white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        z-index: 1000;
-        position: relative;
-      "></div>
-    `,
+    html: '',
     className: 'night-stop-marker',
     iconSize: [25, 25],
     iconAnchor: [12.5, 12.5],
@@ -287,22 +278,11 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
   }), []);
 
   const dailyPositionIcon = React.useMemo(() => L.divIcon({
-    html: `
-      <div style="
-        background-color:#1f2937;
-        opacity=0.7;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        border: 0px solid;
-        z-index: 100;
-        position: relative;
-      "></div>
-    `,
+    html: '',
     className: 'daily-position-marker',
-    iconSize: [12, 12],
-    iconAnchor: [6, 6],
-    popupAnchor: [0, -6]
+    iconSize: [8, 8],
+    iconAnchor: [4, 4],
+    popupAnchor: [0, 4]
   }), []);
 
   // Create polyline coordinates for the journey path
