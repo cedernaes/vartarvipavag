@@ -41,43 +41,58 @@ const TelegramFeed: React.FC<Props> = ({ posts }) => {
             onClick={() => setSelected(post)}
             aria-label={post.caption || post.type}
           >
-            <div className="feed-cell__photo-area">
-              {post.type === 'photo' && post.media_path && (
-                <img
-                  src={FeedService.getMediaUrl(post.media_path)}
-                  alt={post.caption || ''}
-                  loading="lazy"
-                />
-              )}
-              {post.type === 'video' && post.media_path && (
+            {post.type === 'video' ? (
+              <>
+                <div className="feed-cell__reel-strip" />
                 <div className="feed-cell__video-thumb">
-                  <video
-                    src={`${FeedService.getMediaUrl(post.media_path)}#t=0.001`}
-                    preload="metadata"
-                    muted
-                    playsInline
-                    className="feed-cell__video-preview"
-                  />
+                  {post.media_path && (
+                    <video
+                      src={`${FeedService.getMediaUrl(post.media_path)}#t=0.001`}
+                      preload="metadata"
+                      muted
+                      playsInline
+                      className="feed-cell__video-preview"
+                    />
+                  )}
                   <span className="feed-cell__play">▶</span>
                 </div>
-              )}
-              {post.type === 'text' && (
-                <div className="feed-cell__text-preview">
-                  <p>{post.caption}</p>
-                  {post.latitude != null && (
-                    <span className="feed-cell__pin">📍</span>
+                <div className="feed-cell__video-info">
+                  {post.caption && <p className="feed-cell__caption">{post.caption}</p>}
+                  <time className="feed-cell__time">
+                    {formatDate(post.timestamp)}{post.telegram_user && ` av ${post.telegram_user}`}
+                  </time>
+                </div>
+                <div className="feed-cell__reel-strip" />
+              </>
+            ) : (
+              <>
+                <div className="feed-cell__photo-area">
+                  {post.type === 'photo' && post.media_path && (
+                    <img
+                      src={FeedService.getMediaUrl(post.media_path)}
+                      alt={post.caption || ''}
+                      loading="lazy"
+                    />
+                  )}
+                  {post.type === 'text' && (
+                    <div className="feed-cell__text-preview">
+                      <p>{post.caption}</p>
+                      {post.latitude != null && (
+                        <span className="feed-cell__pin">📍</span>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
-            <div className="feed-cell__info">
-              {post.caption && post.type !== 'text' && (
-                <p className="feed-cell__caption">{post.caption}</p>
-              )}
-              <time className="feed-cell__time">
-                {formatDate(post.timestamp)}{post.telegram_user && ` av ${post.telegram_user}`}
-              </time>
-            </div>
+                <div className="feed-cell__info">
+                  {post.caption && post.type !== 'text' && (
+                    <p className="feed-cell__caption">{post.caption}</p>
+                  )}
+                  <time className="feed-cell__time">
+                    {formatDate(post.timestamp)}{post.telegram_user && ` av ${post.telegram_user}`}
+                  </time>
+                </div>
+              </>
+            )}
           </button>
         ))}
       </div>
