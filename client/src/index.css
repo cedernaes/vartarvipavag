@@ -477,6 +477,53 @@ footer {
   font-family: 'Courier New', Courier, monospace;
 }
 
+/* Film reel design for video cards */
+.feed-cell--video {
+  background: transparent;
+  padding: 0;
+}
+
+@media (min-width: 601px) {
+  .feed-cell--video:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.feed-cell--video .feed-cell__video-thumb::before,
+.feed-cell--video .feed-cell__video-thumb::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 16px;
+  z-index: 2;
+  background-color: #111;
+  background-image: repeating-linear-gradient(
+    to right,
+    #111 0,
+    #111 6px,
+    #444 6px,
+    #444 14px,
+    #111 14px,
+    #111 20px
+  );
+  background-size: 20px 16px;
+}
+
+.feed-cell--video .feed-cell__video-thumb::before {
+  top: 0;
+}
+
+.feed-cell--video .feed-cell__video-thumb::after {
+  bottom: 0;
+}
+
+.feed-cell--video .feed-cell__info {
+  padding: 5px 8px 8px;
+  min-height: unset;
+}
+
 /* Modal */
 .feed-modal-backdrop {
   position: fixed;
