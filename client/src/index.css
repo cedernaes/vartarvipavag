@@ -493,7 +493,7 @@ footer {
 }
 
 .feed-cell__reel-strip {
-  height: 18px;
+  height: 12px;
   flex-shrink: 0;
   background-color: transparent;
   background-image:
@@ -505,7 +505,7 @@ footer {
       white 5px,
       transparent 5px,
       transparent 14px,
-      white 14px,
+      white 10px,
       white 20px
     );
   background-size: 100% 100%, 100% 100%, 20px 100%;
