@@ -100,7 +100,9 @@ const TelegramFeed: React.FC<Props> = ({ posts }) => {
       {selected && (
         <div className="feed-modal-backdrop" onClick={() => setSelected(null)}>
           <button className="feed-modal__close" onClick={() => setSelected(null)}>✕</button>
-          <div className="feed-modal" onClick={(e) => e.stopPropagation()}>
+          <div className={`feed-modal${selected.type === 'video' ? ' feed-modal--video' : ''}`} onClick={(e) => e.stopPropagation()}>
+            {selected.type === 'video' && <div className="feed-cell__reel-strip" />}
+
             {selected.type === 'photo' && selected.media_path && (
               <img
                 src={FeedService.getMediaUrl(selected.media_path)}
@@ -137,6 +139,8 @@ const TelegramFeed: React.FC<Props> = ({ posts }) => {
                 </p>
               )}
             </div>
+
+            {selected.type === 'video' && <div className="feed-cell__reel-strip" />}
           </div>
         </div>
       )}
