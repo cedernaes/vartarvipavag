@@ -485,13 +485,6 @@ footer {
   flex-direction: column;
 }
 
-@media (min-width: 601px) {
-  .feed-cell--video:hover {
-    transform: none;
-    box-shadow: none;
-  }
-}
-
 .feed-cell__reel-strip {
   height: 12px;
   flex-shrink: 0;
@@ -567,6 +560,15 @@ footer {
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 4px 12px 32px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.12);
+}
+
+.feed-modal--video {
+  background: transparent;
+  padding: 0;
+}
+
+.feed-modal--video .feed-modal__meta {
+  background: white;
 }
 
 .feed-modal__media {
