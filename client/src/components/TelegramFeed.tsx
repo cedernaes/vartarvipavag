@@ -113,13 +113,11 @@ const TelegramFeed: React.FC<Props> = ({ posts }) => {
 
             {selected.type === 'video' && selected.media_path && (
               <div>
-                <div className="feed-cell__reel-strip" />
                 <video
                   src={FeedService.getMediaUrl(selected.media_path)}
                   controls
                   className="feed-modal__media"
                 />
-                <div className="feed-cell__reel-strip" />
               </div>
             )}
 
