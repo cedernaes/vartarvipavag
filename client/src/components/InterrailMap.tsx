@@ -125,6 +125,34 @@ const mapStyle = `
 
 const CLUSTER_RADIUS_PX = 20;
 
+// Returns a hot-metal color for a position based on how recently it was recorded
+// relative to latestTimestamp. Within the last 24h: black → dark-red → orange → yellow.
+function positionHeatColor(posTimestamp: string, latestTimestamp: string): string {
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+  const age = new Date(latestTimestamp).getTime() - new Date(posTimestamp).getTime();
+  if (age >= ONE_DAY_MS) return '#1a1a1a';
+
+  const heat = 1 - age / ONE_DAY_MS; // 0 = 24 h old, 1 = newest
+  const stops: [number, number, number, number][] = [
+    [0.00,  26,  26,  26],  // near-black
+    [0.25,  80,  10,   0],  // very dark red
+    [0.50, 160,  40,   0],  // dark red
+    [0.75, 220, 100,   0],  // orange
+    [1.00, 255, 220,  20],  // yellow
+  ];
+
+  let lo = stops[0], hi = stops[stops.length - 1];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (heat >= stops[i][0] && heat <= stops[i + 1][0]) { lo = stops[i]; hi = stops[i + 1]; break; }
+  }
+
+  const t = hi[0] === lo[0] ? 0 : (heat - lo[0]) / (hi[0] - lo[0]);
+  const r = Math.round(lo[1] + t * (hi[1] - lo[1]));
+  const g = Math.round(lo[2] + t * (hi[2] - lo[2]));
+  const b = Math.round(lo[3] + t * (hi[3] - lo[3]));
+  return `rgb(${r},${g},${b})`;
+}
+
 function NightStopClusters({
   positions,
   nightStopPositionIds,
@@ -277,13 +305,6 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
     popupAnchor: [0, -12.5]
   }), []);
 
-  const dailyPositionIcon = React.useMemo(() => L.divIcon({
-    html: '',
-    className: 'daily-position-marker',
-    iconSize: [8, 8],
-    iconAnchor: [4, 4],
-    popupAnchor: [0, 4]
-  }), []);
 
   // Create polyline coordinates for the journey path
   const polylineCoordinates: [number, number][] = positions.map(pos => [pos.latitude, pos.longitude]);
@@ -429,12 +450,21 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
 
           // Only render daily positions in this pass
           if (positionType !== 'daily_position') return null;
-          
+
+          const color = positionHeatColor(position.timestamp, latestPosition.timestamp);
+          const heatIcon = L.divIcon({
+            html: `<div style="width:8px;height:8px;border-radius:50%;background:${color};opacity:0.85;"></div>`,
+            className: '',
+            iconSize: [8, 8],
+            iconAnchor: [4, 4],
+            popupAnchor: [0, 4],
+          });
+
           return (
             <Marker
               key={position.id}
               position={[position.latitude, position.longitude]}
-              icon={dailyPositionIcon}
+              icon={heatIcon}
               zIndexOffset={100}
             >
               <Popup>
