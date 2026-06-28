@@ -56,6 +56,103 @@ body {
   margin-bottom: 2rem;
 }
 
+/* Railway "on the move" bar — sits on top of the map */
+.railway-bar {
+  position: relative;
+  height: 48px;
+  background: #f5c8c5;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+}
+
+/* Sit flush with the map directly below it */
+.railway-bar + .map-container {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+/* Track spans the full width of the bar, edge to edge */
+.railway-bar__track {
+  position: absolute;
+  inset: 0;
+}
+
+.railway-bar__rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary-color);
+}
+.railway-bar__rail--top {
+  top: 70%;
+  margin-top: -3px;
+}
+.railway-bar__rail--bottom {
+  top: 70%;
+  margin-top: 3px;
+}
+
+/* Sleepers / ties as a repeating pattern between the rails */
+.railway-bar__ties {
+  position: absolute;
+  top: 70%;
+  left: 0;
+  width: 200%;
+  height: 8px;
+  margin-top: -4px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--primary-color) 0 2px,
+    transparent 2px 14px
+  );
+}
+
+/* Train + status float on top of the track, anchored to the right */
+.railway-bar__train {
+  position: absolute;
+  top: 50%;
+  right: 4.5rem;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.railway-bar__status {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  white-space: nowrap;
+}
+
+/* On the move: scroll the ties left-to-right and bob the train */
+.railway-bar--moving .railway-bar__ties {
+  animation: railway-scroll 0.55s linear infinite;
+}
+.railway-bar--moving .railway-bar__train {
+  animation: railway-bob 0.55s ease-in-out infinite;
+}
+
+@keyframes railway-scroll {
+  from { transform: translateX(14px); }
+  to { transform: translateX(0); }
+}
+@keyframes railway-bob {
+  0%, 100% { transform: translateY(-50%); }
+  50% { transform: translateY(calc(-50% - 1px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .railway-bar--moving .railway-bar__ties,
+  .railway-bar--moving .railway-bar__train {
+    animation: none;
+  }
+}
+
 .stats-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));

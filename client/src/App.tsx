@@ -3,6 +3,7 @@ import InterrailMap from './components/InterrailMap';
 import LoginForm from './components/LoginForm';
 import TelegramFeed from './components/TelegramFeed';
 import TravelStats from './components/TravelStats';
+import RailwayBar from './components/RailwayBar';
 import { FeedService, PositionService, deterministicRandomizePosition } from './services/api';
 import { Position, Post } from './types';
 import ForkMeOnGithub from './components/ForkMeOnGithub';
@@ -14,6 +15,8 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authChecked, setAuthChecked] = useState<boolean>(false);
+  // TODO: drive this from Home Assistant ("train mode") via the backend (issue #19)
+  const [isMoving, setIsMoving] = useState<boolean>(false);
 
   // Check authentication status on app load
   useEffect(() => {
@@ -134,7 +137,12 @@ const App: React.FC = () => {
           </div>
         )}
         {import.meta.env.DEV && (
-          <button onClick={handleLogout}>Logga ut</button>
+          <>
+            <button onClick={handleLogout}>Logga ut</button>
+            <button onClick={() => setIsMoving((m) => !m)}>
+              {isMoving ? 'Stoppa tåget' : 'Starta tåget'}
+            </button>
+          </>
         )}
 
         {loading && positions.length === 0 ? (
@@ -146,6 +154,7 @@ const App: React.FC = () => {
           </div>
         ) : (
           <>
+            <RailwayBar isMoving={isMoving} />
             <InterrailMap
               positions={positions}
               posts={posts}
