@@ -69,7 +69,12 @@ const mapStyle = `
     opacity: 0.7;
     border-radius: 50%;
   }
-  
+
+  @keyframes live-pulse {
+    0%   { transform: translate(-50%, -50%) scale(1);   opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
+  }
+
   /* Info box styling */
   .map-info-boxes {
     display: flex;
@@ -452,13 +457,26 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
 
           const two_days = 2 * 24 * 60 * 60;
           const color = positionHeatColor(position.timestamp, new Date().toISOString(), two_days);
-          const heatIcon = L.divIcon({
-            html: `<div style="width:8px;height:8px;border-radius:50%;background:${color};opacity:0.85;"></div>`,
-            className: '',
-            iconSize: [8, 8],
-            iconAnchor: [4, 4],
-            popupAnchor: [0, 4],
-          });
+          const isLatest = position.id === latestPosition.id;
+
+          const heatIcon = isLatest
+            ? L.divIcon({
+                html: `<div style="position:relative;width:20px;height:20px;">` +
+                  `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:${color};"></div>` +
+                  `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;border:2px solid ${color};animation:live-pulse 2s ease-out infinite;box-sizing:border-box;"></div>` +
+                  `</div>`,
+                className: '',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10],
+                popupAnchor: [0, -10],
+              })
+            : L.divIcon({
+                html: `<div style="width:8px;height:8px;border-radius:50%;background:${color};opacity:0.85;"></div>`,
+                className: '',
+                iconSize: [8, 8],
+                iconAnchor: [4, 4],
+                popupAnchor: [0, 4],
+              });
 
           return (
             <Marker
