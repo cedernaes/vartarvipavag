@@ -142,7 +142,7 @@ function positionHeatColor(posTimestamp: string, latestTimestamp: string, cooldo
     [0.25,  80,  10,   0],  // very dark red
     [0.50, 160,  40,   0],  // dark red
     [0.75, 220, 100,   0],  // orange
-    [1.00, 255, 220,  20],  // yellow
+    [1.00, 255, 120,  0],  // orange-yellow
   ];
 
   let lo = stops[0], hi = stops[stops.length - 1];
