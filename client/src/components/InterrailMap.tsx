@@ -69,7 +69,12 @@ const mapStyle = `
     opacity: 0.7;
     border-radius: 50%;
   }
-  
+
+  @keyframes live-pulse {
+    0%   { transform: translate(-50%, -50%) scale(1);   opacity: 0.9; }
+    100% { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
+  }
+
   /* Info box styling */
   .map-info-boxes {
     display: flex;
@@ -124,6 +129,33 @@ const mapStyle = `
 `;
 
 const CLUSTER_RADIUS_PX = 20;
+
+// Returns a hot-metal color for a position based on how recently it was recorded
+// relative to latestTimestamp. Within the last 24h: black → dark-red → orange → yellow.
+function positionHeatColor(posTimestamp: string, latestTimestamp: string, cooldown_time_s: number): string {
+  const age = new Date(latestTimestamp).getTime() - new Date(posTimestamp).getTime();
+  if (age >= cooldown_time_s * 1000) return '#1a1a1a';
+
+  const heat = 1 - age / (cooldown_time_s * 1000); // 0 = 24 h old, 1 = newest
+  const stops: [number, number, number, number][] = [
+    [0.00,  26,  26,  26],  // near-black
+    [0.25,  80,  10,   0],  // very dark red
+    [0.50, 160,  40,   0],  // dark red
+    [0.75, 220, 100,   0],  // orange
+    [1.00, 255, 120,  0],  // orange-yellow
+  ];
+
+  let lo = stops[0], hi = stops[stops.length - 1];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (heat >= stops[i][0] && heat <= stops[i + 1][0]) { lo = stops[i]; hi = stops[i + 1]; break; }
+  }
+
+  const t = hi[0] === lo[0] ? 0 : (heat - lo[0]) / (hi[0] - lo[0]);
+  const r = Math.round(lo[1] + t * (hi[1] - lo[1]));
+  const g = Math.round(lo[2] + t * (hi[2] - lo[2]));
+  const b = Math.round(lo[3] + t * (hi[3] - lo[3]));
+  return `rgb(${r},${g},${b})`;
+}
 
 function NightStopClusters({
   positions,
@@ -277,13 +309,6 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
     popupAnchor: [0, -12.5]
   }), []);
 
-  const dailyPositionIcon = React.useMemo(() => L.divIcon({
-    html: '',
-    className: 'daily-position-marker',
-    iconSize: [8, 8],
-    iconAnchor: [4, 4],
-    popupAnchor: [0, 4]
-  }), []);
 
   // Create polyline coordinates for the journey path
   const polylineCoordinates: [number, number][] = positions.map(pos => [pos.latitude, pos.longitude]);
@@ -429,12 +454,35 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
 
           // Only render daily positions in this pass
           if (positionType !== 'daily_position') return null;
-          
+
+          const two_days = 2 * 24 * 60 * 60;
+          const color = positionHeatColor(position.timestamp, new Date().toISOString(), two_days);
+          const isLatest = position.id === latestPosition.id;
+
+          const heatIcon = isLatest
+            ? L.divIcon({
+                html: `<div style="position:relative;width:20px;height:20px;">` +
+                  `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:${color};"></div>` +
+                  `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;border:2px solid ${color};animation:live-pulse 2s ease-out infinite;box-sizing:border-box;"></div>` +
+                  `</div>`,
+                className: '',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10],
+                popupAnchor: [0, -10],
+              })
+            : L.divIcon({
+                html: `<div style="width:8px;height:8px;border-radius:50%;background:${color};opacity:0.85;"></div>`,
+                className: '',
+                iconSize: [8, 8],
+                iconAnchor: [4, 4],
+                popupAnchor: [0, 4],
+              });
+
           return (
             <Marker
               key={position.id}
               position={[position.latitude, position.longitude]}
-              icon={dailyPositionIcon}
+              icon={heatIcon}
               zIndexOffset={100}
             >
               <Popup>
