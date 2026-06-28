@@ -127,12 +127,11 @@ const CLUSTER_RADIUS_PX = 20;
 
 // Returns a hot-metal color for a position based on how recently it was recorded
 // relative to latestTimestamp. Within the last 24h: black → dark-red → orange → yellow.
-function positionHeatColor(posTimestamp: string, latestTimestamp: string): string {
-  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+function positionHeatColor(posTimestamp: string, latestTimestamp: string, cooldown_time_s: number): string {
   const age = new Date(latestTimestamp).getTime() - new Date(posTimestamp).getTime();
-  if (age >= ONE_DAY_MS) return '#1a1a1a';
+  if (age >= cooldown_time_s * 1000) return '#1a1a1a';
 
-  const heat = 1 - age / ONE_DAY_MS; // 0 = 24 h old, 1 = newest
+  const heat = 1 - age / (cooldown_time_s * 1000); // 0 = 24 h old, 1 = newest
   const stops: [number, number, number, number][] = [
     [0.00,  26,  26,  26],  // near-black
     [0.25,  80,  10,   0],  // very dark red
@@ -451,7 +450,8 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
           // Only render daily positions in this pass
           if (positionType !== 'daily_position') return null;
 
-          const color = positionHeatColor(position.timestamp, latestPosition.timestamp);
+          const two_days = 2 * 24 * 60 * 60;
+          const color = positionHeatColor(position.timestamp, new Date().toISOString(), two_days);
           const heatIcon = L.divIcon({
             html: `<div style="width:8px;height:8px;border-radius:50%;background:${color};opacity:0.85;"></div>`,
             className: '',
