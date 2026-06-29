@@ -61,6 +61,7 @@ const seedPositions: SeedPosition[] = [
 
   // Day 5 - Paris night stop
   { id: '42', timestamp: '2024-12-19T00:00:00Z', latitude: 48.8566, longitude: 2.3522 }, // Paris hotel (midnight = night stop)
+  { id: '43', timestamp: '2024-12-19T08:00:00Z', latitude: 47.8566, longitude: 2.3522 },
 ];
 
 async function seed(): Promise<void> {
