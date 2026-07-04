@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Post } from '../types';
 import { FeedService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Props {
   posts: Post[];
-  isAdminMode?: boolean;
   onPostDeleted?: () => void;
 }
 
@@ -19,7 +19,8 @@ function formatCoords(lat: number, lon: number): string {
   return `${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`;
 }
 
-const TelegramFeed: React.FC<Props> = ({ posts, isAdminMode = false, onPostDeleted }) => {
+const TelegramFeed: React.FC<Props> = ({ posts, onPostDeleted }) => {
+  const { isAdminMode } = useAuth();
   const [selected, setSelected] = useState<Post | null>(null);
 
   const handleDelete = async (post: Post) => {

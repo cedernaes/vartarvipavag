@@ -4,6 +4,7 @@ import L from 'leaflet';
 import { Position, Post } from '../types';
 import { computeNightStopPositionIds } from '../utils/nightStops';
 import { PositionService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 // Fix for default markers in React-Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -163,16 +164,15 @@ function NightStopClusters({
   nightStopPositionIds,
   singleIcon,
   formatDate,
-  isAdminMode = false,
   onDelete,
 }: {
   positions: Position[];
   nightStopPositionIds: Set<string>;
   singleIcon: L.DivIcon;
   formatDate: (d: string) => string;
-  isAdminMode?: boolean;
   onDelete?: (positionId: string) => void;
 }) {
+  const { isAdminMode } = useAuth();
   const map = useMap();
   const [zoom, setZoom] = useState(() => map.getZoom());
 
@@ -282,10 +282,9 @@ function NightStopClusters({
 interface InterrailMapProps {
   positions: Position[];
   posts?: Post[];
-  homeTimezone?: string; // IANA timezone (e.g., "Europe/Stockholm")
-  nightStopHour?: number; // Hour of day for night stop detection (0-23)
-  isAdminMode?: boolean; // Whether admin mode is active
-  onPositionDeleted?: () => void; // Callback when a position is deleted
+  homeTimezone?: string;
+  nightStopHour?: number;
+  onPositionDeleted?: () => void;
 }
 
 const InterrailMap: React.FC<InterrailMapProps> = ({
@@ -293,9 +292,9 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
   posts,
   homeTimezone,
   nightStopHour,
-  isAdminMode = false,
   onPositionDeleted
 }) => {
+  const { isAdminMode } = useAuth();
   const [map, setMap] = useState<L.Map | null>(null);
 
   // Get configuration from props, environment variables, or defaults
@@ -571,7 +570,6 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
           nightStopPositionIds={nightStopPositionIds}
           singleIcon={nightStopIcon}
           formatDate={formatDateNightStop}
-          isAdminMode={isAdminMode}
           onDelete={handleDeletePosition}
         />
       </MapContainer>

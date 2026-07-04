@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { PositionService } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginFormProps {
-  onLoginSuccess: (isAdmin: boolean) => void;
-  showAdminOption?: boolean; // Only show admin option when accessed via special URL
+  showAdminOption?: boolean;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, showAdminOption = false }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ showAdminOption = false }) => {
+  const { login } = useAuth();
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -19,13 +19,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, showAdminOption =
     setError('');
 
     try {
-      if (isAdminMode) {
-        await PositionService.adminLogin(password);
-      } else {
-        await PositionService.login(password);
-      }
+      await login(password, isAdminMode);
       setPassword('');
-      onLoginSuccess(isAdminMode);
     } catch (error: any) {
       console.error('Login failed:', error);
       const errorMessage = error?.response?.data?.error || error?.message || 'Login failed. Please check your password.';
