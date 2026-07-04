@@ -24,6 +24,10 @@ const TelegramFeed: React.FC<Props> = ({ posts, onPostDeleted }) => {
   const [selected, setSelected] = useState<Post | null>(null);
 
   const handleDelete = async (post: Post) => {
+    if (!window.confirm('Är du säker på att du vill ta bort detta inlägg?')) {
+      return;
+    }
+
     try {
       await FeedService.deletePost(post.id);
       setSelected(null);
