@@ -53,7 +53,7 @@ export class SecurityMiddleware {
       return;
     }
 
-    const providedKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+    const providedKey = req.headers['x-api-key'];
     if (!providedKey || providedKey !== this.apiKey || providedKey !== this.adminApiKey) {
       console.warn(`Unauthorized request from IP: ${this.getClientIP(req)}`);
       res.status(401).json({
@@ -75,7 +75,7 @@ export class SecurityMiddleware {
       return;
     }
 
-    const providedKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+    const providedKey = req.headers['x-api-key'];
     if (!providedKey || providedKey !== this.adminApiKey) {
       res.status(401).json({
         success: false,
