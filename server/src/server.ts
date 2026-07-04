@@ -168,8 +168,8 @@ process.on('SIGINT', async () => {
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Position API: http://localhost:${PORT}/api/positions`);
-  console.log(`🔒 Write operations restricted to localhost only`);
   console.log(`💡 Health check: http://localhost:${PORT}/health`);
+  securityMiddleware.printConfigurationStatus();
 });
 
 export { io };

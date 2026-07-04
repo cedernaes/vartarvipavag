@@ -44,6 +44,12 @@ export class SecurityMiddleware {
     return this.apiKey;
   }
 
+  public printConfigurationStatus(): void {
+    const is_or_isnt = (key: string | undefined) => (key ? 'is' : 'is not');
+    console.log(`🔑 Client API key ${is_or_isnt(this.apiKey)} configured (controlled by the env "CLIENT_PASSWORD")`);
+    console.log(`🔑 Admin API key ${is_or_isnt(this.adminApiKey)} configured (controlled by the env "ADMIN_PASSWORD")`);
+  }
+
   public validateApiKey = (req: Request, res: Response, next: NextFunction): void => {
     if (this.apiKey) {
       const providedKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
