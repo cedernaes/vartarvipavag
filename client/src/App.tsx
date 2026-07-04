@@ -180,7 +180,7 @@ const App: React.FC = () => {
               onPositionDeleted={fetchPositions}
             />
             <TravelStats positions={positions} />
-            <TelegramFeed posts={posts} />
+            <TelegramFeed posts={posts} isAdminMode={isAdminMode} onPostDeleted={fetchPositions} />
           </>
         )}
       </main>

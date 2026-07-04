@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { createReadStream, existsSync, statSync } from 'fs';
+import { createReadStream, existsSync, statSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { lookup } from 'mime-types';
 import { DatabaseManager } from '../models/database';
@@ -87,6 +87,34 @@ router.get('/media/:filename', (req: Request, res: Response) => {
 
   res.setHeader('Content-Length', fileSize);
   createReadStream(filepath).pipe(res);
+});
+
+// DELETE /api/feed/:id — remove a post (admin only)
+router.delete('/:id', securityMiddleware.validateAdminApiKey, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const row = await db.get('SELECT media_path FROM posts WHERE id = ?', [id]);
+    if (!row) {
+      res.status(404).json({ success: false, error: 'Post not found' });
+      return;
+    }
+
+    await db.run('DELETE FROM posts WHERE id = ?', [id]);
+
+    if (row.media_path) {
+      const filepath = join(MEDIA_DIR, row.media_path);
+      if (existsSync(filepath)) {
+        unlinkSync(filepath);
+      }
+    }
+
+    const response: ApiResponse<null> = { success: true };
+    res.json(response);
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete post' });
+  }
 });
 
 export default router;
