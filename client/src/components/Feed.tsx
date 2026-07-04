@@ -19,7 +19,7 @@ function formatCoords(lat: number, lon: number): string {
   return `${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`;
 }
 
-const TelegramFeed: React.FC<Props> = ({ posts, onPostDeleted }) => {
+const Feed: React.FC<Props> = ({ posts, onPostDeleted }) => {
   const { isAdminMode } = useAuth();
   const [selected, setSelected] = useState<Post | null>(null);
 
@@ -175,4 +175,4 @@ const TelegramFeed: React.FC<Props> = ({ posts, onPostDeleted }) => {
   );
 };
 
-export default TelegramFeed;
+export default Feed;
