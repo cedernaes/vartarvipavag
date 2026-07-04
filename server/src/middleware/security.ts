@@ -3,28 +3,23 @@ import { NextFunction, Request, Response } from 'express';
 
 export interface SecurityConfig {
   password?: string;
-  apiKey?: string;
   adminPassword?: string;
-  adminApiKey?: string;
   allowedIPs?: string[];
 }
 
-// Hash password using Node.js crypto (equivalent to client-side Web Crypto API)
 function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
 
 export class SecurityMiddleware {
-  private config: SecurityConfig;
+  private readonly apiKey: string | undefined;
+  private readonly adminApiKey: string | undefined;
+  private readonly allowedIPs: string[];
 
   constructor(config: SecurityConfig = {}) {
-    this.config = {
-      password: config.password,
-      apiKey: config.apiKey || process.env.API_KEY || (config.password && hashPassword(config.password)),
-      adminPassword: config.adminPassword,
-      adminApiKey: config.adminApiKey || process.env.ADMIN_API_KEY || (config.adminPassword && hashPassword(config.adminPassword)),
-      allowedIPs: config.allowedIPs || ['127.0.0.1', '::1', '::ffff:127.0.0.1', 'localhost']
-    };
+    this.apiKey = config.password ? hashPassword(config.password) : undefined;
+    this.adminApiKey = config.adminPassword ? hashPassword(config.adminPassword) : undefined;
+    this.allowedIPs = config.allowedIPs || ['127.0.0.1', '::1', '::ffff:127.0.0.1', 'localhost'];
   }
 
   public onlyInternalNetwork = (req: Request, res: Response, next: NextFunction): void => {
@@ -46,15 +41,15 @@ export class SecurityMiddleware {
   };
 
   public getApiKey(): string | undefined {
-    return this.config.apiKey;
+    return this.apiKey;
   }
 
   public validateApiKey = (req: Request, res: Response, next: NextFunction): void => {
-    // Check API key if enabled
-    if (this.config.apiKey) {
+    if (this.apiKey) {
       const providedKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
 
-      if (!providedKey || providedKey !== this.config.apiKey) {
+      if (!providedKey || providedKey !== this.apiKey || providedKey !== this.adminApiKey) {
+        console.warn(`Unauthorized request from IP: ${this.getClientIP(req)}`);
         res.status(401).json({
           success: false,
           error: 'Invalid or missing API key'
@@ -67,11 +62,10 @@ export class SecurityMiddleware {
   };
 
   public validateAdminApiKey = (req: Request, res: Response, next: NextFunction): void => {
-    // Check admin API key if enabled
-    if (this.config.adminApiKey) {
+    if (this.adminApiKey) {
       const providedKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
 
-      if (!providedKey || providedKey !== this.config.adminApiKey) {
+      if (!providedKey || providedKey !== this.adminApiKey) {
         res.status(401).json({
           success: false,
           error: 'Invalid or missing admin API key'
@@ -89,12 +83,9 @@ export class SecurityMiddleware {
     next();
   };
 
-  // Middleware that requires both local network AND admin API key
   public requireAdminAndLocalNetwork = (req: Request, res: Response, next: NextFunction): void => {
-    // First check local network
-    const clientIP = this.getClientIP(req);
     const hasProxyHeaders = req.headers['x-forwarded-for'] || req.headers['x-real-ip'];
-    
+
     if (hasProxyHeaders) {
       res.status(403).json({
         success: false,
@@ -103,11 +94,10 @@ export class SecurityMiddleware {
       return;
     }
 
-    // Then check admin API key
-    if (this.config.adminApiKey) {
+    if (this.adminApiKey) {
       const providedKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
 
-      if (!providedKey || providedKey !== this.config.adminApiKey) {
+      if (!providedKey || providedKey !== this.adminApiKey) {
         res.status(401).json({
           success: false,
           error: 'Invalid or missing admin API key'
@@ -136,11 +126,8 @@ export class SecurityMiddleware {
   }
 }
 
-// Default instance
 export const securityMiddleware = new SecurityMiddleware({
   password: process.env.CLIENT_PASSWORD,
-  apiKey: process.env.API_KEY,
   adminPassword: process.env.ADMIN_PASSWORD,
-  adminApiKey: process.env.ADMIN_API_KEY,
-  allowedIPs: process.env.ALLOWED_IPS?.split(',') || undefined,
+  allowedIPs: process.env.ALLOWED_IPS?.split(','),
 });
