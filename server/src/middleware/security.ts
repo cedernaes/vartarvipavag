@@ -48,17 +48,19 @@ export class SecurityMiddleware {
   }
 
   public validateApiKey = (req: Request, res: Response, next: NextFunction): void => {
-    if (this.apiKey) {
-      const providedKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+    if (!this.apiKey) {
+      next();
+      return;
+    }
 
-      if (!providedKey || providedKey !== this.apiKey || providedKey !== this.adminApiKey) {
-        console.warn(`Unauthorized request from IP: ${this.getClientIP(req)}`);
-        res.status(401).json({
-          success: false,
-          error: 'Invalid or missing API key'
-        });
-        return;
-      }
+    const providedKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+    if (!providedKey || providedKey !== this.apiKey || providedKey !== this.adminApiKey) {
+      console.warn(`Unauthorized request from IP: ${this.getClientIP(req)}`);
+      res.status(401).json({
+        success: false,
+        error: 'Invalid or missing API key'
+      });
+      return;
     }
 
     next();
