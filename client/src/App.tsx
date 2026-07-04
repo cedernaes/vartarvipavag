@@ -77,12 +77,6 @@ const App: React.FC = () => {
     setIsAuthenticated(true);
     setIsAdminMode(isAdmin);
     setError(null);
-    
-    // Clean up URL parameters/hash after successful login
-    if (window.location.search.includes('admin=true') || window.location.hash === '#admin') {
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
-    }
   };
 
   const handleLogout = () => {
