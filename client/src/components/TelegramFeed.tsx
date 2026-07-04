@@ -4,6 +4,8 @@ import { FeedService } from '../services/api';
 
 interface Props {
   posts: Post[];
+  isAdminMode?: boolean;
+  onPostDeleted?: () => void;
 }
 
 function formatDate(iso: string): string {
@@ -17,8 +19,18 @@ function formatCoords(lat: number, lon: number): string {
   return `${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E`;
 }
 
-const TelegramFeed: React.FC<Props> = ({ posts }) => {
+const TelegramFeed: React.FC<Props> = ({ posts, isAdminMode = false, onPostDeleted }) => {
   const [selected, setSelected] = useState<Post | null>(null);
+
+  const handleDelete = async (post: Post) => {
+    try {
+      await FeedService.deletePost(post.id);
+      setSelected(null);
+      onPostDeleted?.();
+    } catch (error) {
+      console.error('Error deleting post:', error);
+    }
+  };
 
   if (posts.length === 0) {
     return (
@@ -139,6 +151,14 @@ const TelegramFeed: React.FC<Props> = ({ posts }) => {
                 <p className="feed-modal__coords">
                   📍 {formatCoords(selected.latitude, selected.longitude)}
                 </p>
+              )}
+              {isAdminMode && (
+                <button
+                  className="feed-modal__delete"
+                  onClick={() => handleDelete(selected)}
+                >
+                  Ta bort inlägg
+                </button>
               )}
             </div>
 

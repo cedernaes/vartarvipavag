@@ -219,6 +219,13 @@ export class FeedService {
     return response.data.data || [];
   }
 
+  static async deletePost(id: string): Promise<void> {
+    const response = await api.delete<ApiResponse<null>>(`/api/feed/${id}`);
+    if (!response.data.success) {
+      throw new Error(response.data.error || 'Failed to delete post');
+    }
+  }
+
   static getMediaUrl(filename: string): string {
     const base = import.meta.env.VITE_API_URL || 'http://localhost:3001';
     return `${base}/api/feed/media/${filename}`;

@@ -635,3 +635,19 @@ footer {
   font-family: 'Courier New', Courier, monospace;
   margin: 0;
 }
+
+.feed-modal__delete {
+  margin-top: 12px;
+  padding: 6px 14px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.feed-modal__delete:hover {
+  background: #b91c1c;
+}
