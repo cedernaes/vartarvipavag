@@ -6,25 +6,14 @@ import TravelStats from './components/TravelStats';
 import { FeedService, PositionService, deterministicRandomizePosition } from './services/api';
 import { Position, Post } from './types';
 import ForkMeOnGithub from './components/ForkMeOnGithub';
+import { useAuth } from './contexts/AuthContext';
 
 const App: React.FC = () => {
+  const { isAuthenticated, isAdminMode, logout } = useAuth();
   const [positions, setPositions] = useState<Position[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [authChecked, setAuthChecked] = useState<boolean>(false);
-  const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
-
-  // Check authentication status on app load
-  useEffect(() => {
-    // Check if user has stored API key
-    const isAuth = PositionService.isAuthenticated();
-    const isAdmin = PositionService.isAdminAuthenticated();
-    setIsAuthenticated(isAuth);
-    setIsAdminMode(isAdmin);
-    setAuthChecked(true);
-  }, []);
 
   // Fetch positions from API
   const fetchPositions = async (): Promise<void> => {
@@ -48,7 +37,7 @@ const App: React.FC = () => {
 
       // If unauthorized, redirect to login
       if (err instanceof Error && err.message.includes('401')) {
-        setIsAuthenticated(false);
+        logout();
         setError('Authentication expired. Please log in again.');
       } else {
         setError(err instanceof Error ? err.message : 'Failed to fetch positions');
@@ -60,10 +49,10 @@ const App: React.FC = () => {
 
   // Initial load after authentication
   useEffect(() => {
-    if (isAuthenticated && authChecked) {
+    if (isAuthenticated) {
       fetchPositions();
     }
-  }, [isAuthenticated, authChecked]);
+  }, [isAuthenticated]);
 
   // Refresh positions every 10 minutes when authenticated
   useEffect(() => {
@@ -73,32 +62,9 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
-  const handleLoginSuccess = (isAdmin: boolean) => {
-    setIsAuthenticated(true);
-    setIsAdminMode(isAdmin);
-    setError(null);
-  };
-
-  const handleLogout = () => {
-    PositionService.logout();
-    setIsAuthenticated(false);
-    setIsAdminMode(false);
-  };
-
   const handleRefresh = (): void => {
     fetchPositions();
   };
-
-  if (!authChecked) {
-    return (
-      <div className="app">
-        <div className="loading">
-          <h3>🔄 Loading...</h3>
-          <p>Checking authentication</p>
-        </div>
-      </div>
-    );
-  }
 
   if (!isAuthenticated) {
     // Check for admin mode in URL parameter or hash
@@ -107,10 +73,7 @@ const App: React.FC = () => {
     
     return (
       <div className="app">
-        <LoginForm 
-          onLoginSuccess={handleLoginSuccess} 
-          showAdminOption={isAdminUrl}
-        />
+        <LoginForm showAdminOption={isAdminUrl} />
       </div>
     );
   }
@@ -146,7 +109,7 @@ const App: React.FC = () => {
           </div>
         )}
         {import.meta.env.DEV && (
-          <button onClick={handleLogout}>Logga ut</button>
+          <button onClick={logout}>Logga ut</button>
         )}
 
         {loading && positions.length === 0 ? (
@@ -176,11 +139,10 @@ const App: React.FC = () => {
             <InterrailMap
               positions={positions}
               posts={posts}
-              isAdminMode={isAdminMode}
               onPositionDeleted={fetchPositions}
             />
             <TravelStats positions={positions} />
-            <TelegramFeed posts={posts} isAdminMode={isAdminMode} onPostDeleted={fetchPositions} />
+            <TelegramFeed posts={posts} onPostDeleted={fetchPositions} />
           </>
         )}
       </main>
