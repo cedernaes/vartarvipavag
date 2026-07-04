@@ -62,20 +62,19 @@ export class SecurityMiddleware {
   };
 
   public validateAdminApiKey = (req: Request, res: Response, next: NextFunction): void => {
-    if (this.adminApiKey) {
-      const providedKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
-
-      if (!providedKey || providedKey !== this.adminApiKey) {
-        res.status(401).json({
-          success: false,
-          error: 'Invalid or missing admin API key'
-        });
-        return;
-      }
-    } else {
+    if (!this.adminApiKey) {
       res.status(401).json({
         success: false,
         error: 'Admin access not configured'
+      });
+      return;
+    }
+
+    const providedKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
+    if (!providedKey || providedKey !== this.adminApiKey) {
+      res.status(401).json({
+        success: false,
+        error: 'Invalid or missing admin API key'
       });
       return;
     }
@@ -84,9 +83,9 @@ export class SecurityMiddleware {
   };
 
   public requireAdminAndLocalNetwork = (req: Request, res: Response, next: NextFunction): void => {
-    const hasProxyHeaders = req.headers['x-forwarded-for'] || req.headers['x-real-ip'];
+    const wentThroughProxy = req.headers['x-forwarded-for'] || req.headers['x-real-ip'];
 
-    if (hasProxyHeaders) {
+    if (wentThroughProxy) {
       res.status(403).json({
         success: false,
         error: 'Admin operations are restricted to internal network only'
@@ -94,25 +93,7 @@ export class SecurityMiddleware {
       return;
     }
 
-    if (this.adminApiKey) {
-      const providedKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
-
-      if (!providedKey || providedKey !== this.adminApiKey) {
-        res.status(401).json({
-          success: false,
-          error: 'Invalid or missing admin API key'
-        });
-        return;
-      }
-    } else {
-      res.status(401).json({
-        success: false,
-        error: 'Admin access not configured'
-      });
-      return;
-    }
-
-    next();
+    this.validateAdminApiKey(req, res, next);
   };
 
   private getClientIP(req: Request): string {
