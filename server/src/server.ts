@@ -1,5 +1,7 @@
+// Load all environment variables before any other imports so they are set everywhere
+import 'dotenv/config';
+// Keep newline here to avoid auto-sort of import order
 import crypto from 'crypto';
-import dotenv from 'dotenv';
 import express from 'express';
 import { mkdirSync } from 'fs';
 import { createServer } from 'http';
@@ -13,9 +15,6 @@ import feedRouter from './routes/feed';
 import positionsRouter from './routes/positions';
 import telegramRouter, { initializeTelegramBot } from './routes/telegram';
 import { TelegramBotService } from './services/TelegramBot';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const server = createServer(app);
