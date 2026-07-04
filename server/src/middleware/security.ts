@@ -4,7 +4,6 @@ import { NextFunction, Request, Response } from 'express';
 export interface SecurityConfig {
   password?: string;
   adminPassword?: string;
-  allowedIPs?: string[];
 }
 
 function hashPassword(password: string): string {
@@ -14,12 +13,10 @@ function hashPassword(password: string): string {
 export class SecurityMiddleware {
   private readonly apiKey: string | undefined;
   private readonly adminApiKey: string | undefined;
-  private readonly allowedIPs: string[];
 
   constructor(config: SecurityConfig = {}) {
     this.apiKey = config.password ? hashPassword(config.password) : undefined;
     this.adminApiKey = config.adminPassword ? hashPassword(config.adminPassword) : undefined;
-    this.allowedIPs = config.allowedIPs || ['127.0.0.1', '::1', '::ffff:127.0.0.1', 'localhost'];
   }
 
   public onlyInternalNetwork = (req: Request, res: Response, next: NextFunction): void => {
@@ -115,5 +112,4 @@ export class SecurityMiddleware {
 export const securityMiddleware = new SecurityMiddleware({
   password: process.env.CLIENT_PASSWORD,
   adminPassword: process.env.ADMIN_PASSWORD,
-  allowedIPs: process.env.ALLOWED_IPS?.split(','),
 });
