@@ -54,7 +54,7 @@ export class SecurityMiddleware {
     }
 
     const providedKey = req.headers['x-api-key'];
-    if (!providedKey || providedKey !== this.apiKey || providedKey !== this.adminApiKey) {
+    if (!providedKey || (providedKey !== this.apiKey && providedKey !== this.adminApiKey)) {
       console.warn(`Unauthorized request from IP: ${this.getClientIP(req)}`);
       res.status(401).json({
         success: false,
