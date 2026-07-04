@@ -118,7 +118,6 @@ export class SecurityMiddleware {
   private getClientIP(req: Request): string {
     return (
       req.headers['x-forwarded-for'] as string ||
-      req.connection.remoteAddress ||
       req.socket.remoteAddress ||
       req.ip ||
       'unknown'

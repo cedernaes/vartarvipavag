@@ -13,7 +13,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess, showAdminOption =
   const [showPassword, setShowPassword] = useState(false);
   const [isAdminMode, setIsAdminMode] = useState(showAdminOption); // Auto-enable if accessed via admin URL
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
