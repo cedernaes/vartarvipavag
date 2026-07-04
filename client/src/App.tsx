@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import InterrailMap from './components/InterrailMap';
 import LoginForm from './components/LoginForm';
-import TelegramFeed from './components/TelegramFeed';
+import Feed from './components/Feed';
 import TravelStats from './components/TravelStats';
 import { FeedService, PositionService, deterministicRandomizePosition } from './services/api';
 import { Position, Post } from './types';
@@ -142,7 +142,7 @@ const App: React.FC = () => {
               onPositionDeleted={fetchPositions}
             />
             <TravelStats positions={positions} />
-            <TelegramFeed posts={posts} onPostDeleted={fetchPositions} />
+            <Feed posts={posts} onPostDeleted={fetchPositions} />
           </>
         )}
       </main>
