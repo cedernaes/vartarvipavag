@@ -24,8 +24,10 @@ export default defineConfig(({ mode }) => {
     },
   }
 
-  // Set VITE_API_URL so requests go through proxy
-  config.define['import.meta.env.VITE_API_URL'] = JSON.stringify('http://localhost:3000')
+  // In dev, route through Vite's proxy at localhost:3000; in production, hit the backend directly
+  config.define['import.meta.env.VITE_API_URL'] = JSON.stringify(
+    mode === 'development' ? 'http://localhost:3000' : backendUrl
+  )
 
   return config
 })
