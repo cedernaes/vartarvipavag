@@ -2,10 +2,8 @@ import axios from 'axios';
 import seedrandom from 'seedrandom';
 import { ApiResponse, Position, Post } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
-
 export const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -123,8 +121,7 @@ export class FeedService {
   }
 
   static getMediaUrl(filename: string): string {
-    const base = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-    return `${base}/api/feed/media/${filename}`;
+    return `${import.meta.env.VITE_API_URL}/api/feed/media/${filename}`;
   }
 }
 
