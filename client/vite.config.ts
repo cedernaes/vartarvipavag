@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   // Backend URL - defaults to localhost if not set
-  const backendUrl = env.VITE_BACKEND_URL || 'http://localhost:3001'
+  const backendUrl = env.VITE_API_URL || 'http://localhost:3001'
   const isSecure = backendUrl.startsWith('https://')
 
   const config: any = {
