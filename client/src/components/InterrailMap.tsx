@@ -45,14 +45,12 @@ const mapStyle = `
   
   /* Ensure consistent marker layering */
   .night-stop-marker {
-    z-index: 1000 !important;
     background-color: #ae3c40;
     border-radius: 50%;
     border: 2px solid white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   }
   .night-stop-cluster {
-    z-index: 1000 !important;
     background-color: #ae3c40;
     border-radius: 50%;
     border: 2px solid white;
