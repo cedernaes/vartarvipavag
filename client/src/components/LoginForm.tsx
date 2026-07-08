@@ -60,6 +60,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ showAdminOption = false }) => {
           <div className="form-group">
             <label htmlFor="password">Lösenord:</label>
             <div className="password-input-container">
+              {/* Force the browser to recognize the passwords as different users */}
+              <input type="text" name="username" value={isAdminMode ? 'admin' : 'user'} autoComplete="username" readOnly style={{ display: 'none' }} />
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
@@ -68,6 +70,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ showAdminOption = false }) => {
                 placeholder="Ange lösenord"
                 disabled={isLoading}
                 required
+                autoComplete="current-password"
                 className="password-input"
               />
               <button
