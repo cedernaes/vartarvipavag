@@ -53,11 +53,12 @@ export class PositionService {
     }
   }
 
-  static async adminLogin(password: string): Promise<string> {
+  static async adminLogin(password: string, totpCode: string): Promise<string> {
     try {
       const response = await api.post<ApiResponse<{ apiKey: string }>>('/api/auth/login', {
         password,
-        isAdmin: true
+        isAdmin: true,
+        totpCode,
       });
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error || 'Admin login failed');

@@ -4,7 +4,7 @@ import { api, PositionService } from '../services/api';
 interface AuthContextType {
   isAuthenticated: boolean;
   isAdminMode: boolean;
-  login: (password: string, isAdmin: boolean) => Promise<void>;
+  login: (password: string, isAdmin: boolean, totpCode?: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -68,9 +68,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => api.interceptors.response.eject(id);
   }, []);
 
-  const login = async (password: string, isAdmin: boolean): Promise<void> => {
+  const login = async (password: string, isAdmin: boolean, totpCode?: string): Promise<void> => {
     if (isAdmin) {
-      const key = await PositionService.adminLogin(password);
+      const key = await PositionService.adminLogin(password, totpCode ?? '');
       setAdminApiKey(key);
     } else {
       const key = await PositionService.login(password);

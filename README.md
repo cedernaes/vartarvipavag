@@ -92,6 +92,25 @@ Admin mode allows deleting incorrectly logged positions and is only accessible f
 
 The admin option will only appear when accessed through these special URLs. Admin password is configured via `ADMIN_PASSWORD` environment variable on the server.
 
+### Two-Factor Authentication (2FA)
+
+Admin login supports optional TOTP-based 2FA (compatible with Google Authenticator, Authy, etc.).
+
+To enable it, run the setup script from the `server` directory:
+
+```bash
+cd server
+npm run setup-2fa
+```
+
+This generates a secret and displays a QR code in the terminal. Scan it with your authenticator app, then add the printed line to `server/.env`:
+
+```
+ADMIN_TOTP_SECRET=<generated value>
+```
+
+Once set, the 2FA code field will appear on the admin login form and must be filled in to log in. If `ADMIN_TOTP_SECRET` is not set, 2FA is disabled and the field must be left blank.
+
 ## 📁 Project Structure
 
 ```

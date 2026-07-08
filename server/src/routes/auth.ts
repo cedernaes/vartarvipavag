@@ -1,6 +1,7 @@
 import { Request, Response, Router } from 'express';
 import { ApiResponse } from '../types';
 import crypto from 'crypto';
+import speakeasy from 'speakeasy';
 
 const router = Router();
 
@@ -12,6 +13,7 @@ function hashPassword(password: string): string {
 interface LoginRequest {
   password: string;
   isAdmin?: boolean;
+  totpCode?: string;
 }
 
 interface LoginResponse {
@@ -21,7 +23,7 @@ interface LoginResponse {
 // POST /api/auth/login - Validate password and return API key
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { password, isAdmin }: LoginRequest = req.body;
+    const { password, isAdmin, totpCode }: LoginRequest = req.body;
 
     if (!password) {
       const response: ApiResponse<null> = {
@@ -33,8 +35,8 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     // Get the expected password from environment
-    const expectedPassword = isAdmin 
-      ? process.env.ADMIN_PASSWORD 
+    const expectedPassword = isAdmin
+      ? process.env.ADMIN_PASSWORD
       : process.env.CLIENT_PASSWORD;
 
     if (!expectedPassword) {
@@ -46,11 +48,37 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
-    // Hash the provided password
-    const hashedPassword = hashPassword(password);
+    if (isAdmin) {
+      const totpSecret = process.env.ADMIN_TOTP_SECRET;
 
-    // Compare with expected hashed password (or hash the expected password if it's not already hashed)
-    // Since we're storing passwords in env, we compare the hashed versions
+      // Validate password and TOTP together so neither can be brute-forced independently.
+      // If ADMIN_TOTP_SECRET is not set, TOTP is not required (2FA disabled for this install).
+      const hashedPassword = hashPassword(password);
+      const expectedHashedPassword = hashPassword(expectedPassword);
+      const passwordValid = hashedPassword === expectedHashedPassword;
+      const totpValid = totpSecret
+        ? speakeasy.totp.verify({ secret: totpSecret, encoding: 'base32', token: totpCode ?? '', window: 1 })
+        : !totpCode;
+
+      if (!passwordValid || !totpValid) {
+        const response: ApiResponse<null> = {
+          success: false,
+          error: 'Invalid credentials'
+        };
+        res.status(401).json(response);
+        return;
+      }
+
+      const response: ApiResponse<LoginResponse> = {
+        success: true,
+        data: { apiKey: hashedPassword }
+      };
+      res.json(response);
+      return;
+    }
+
+    // Non-admin: password only
+    const hashedPassword = hashPassword(password);
     const expectedHashedPassword = hashPassword(expectedPassword);
 
     if (hashedPassword !== expectedHashedPassword) {

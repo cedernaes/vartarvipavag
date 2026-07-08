@@ -8,6 +8,7 @@ interface LoginFormProps {
 const LoginForm: React.FC<LoginFormProps> = ({ showAdminOption = false }) => {
   const { login } = useAuth();
   const [password, setPassword] = useState('');
+  const [totpCode, setTotpCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,8 +20,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ showAdminOption = false }) => {
     setError('');
 
     try {
-      await login(password, isAdminMode);
+      await login(password, isAdminMode, isAdminMode ? totpCode : undefined);
       setPassword('');
+      setTotpCode('');
     } catch (error: any) {
       console.error('Login failed:', error);
       const errorMessage = error?.response?.data?.error || error?.message || 'Login failed. Please check your password.';
@@ -103,14 +105,31 @@ const LoginForm: React.FC<LoginFormProps> = ({ showAdminOption = false }) => {
             </div>
           </div>
           
+          {isAdminMode && (
+            <div className="form-group">
+              <label htmlFor="totp">2FA-kod:</label>
+              <input
+                type="text"
+                id="totp"
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="123456 (om konfigurerad)"
+                disabled={isLoading}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                className="password-input"
+              />
+            </div>
+          )}
+
           {error && (
             <div className="error-message">
               {error}
             </div>
           )}
-          
-          <button 
-            type="submit" 
+
+          <button
+            type="submit"
             disabled={isLoading || !password.trim()}
             className="login-button"
           >
