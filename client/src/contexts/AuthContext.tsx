@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { api, AuthService, PositionService } from '../services/api';
 
 interface AuthContextType {
@@ -37,8 +37,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     else localStorage.removeItem('adminApiKey');
   }, [adminApiKey]);
 
-  // Registered once — reads from keysRef so the closure is never stale
-  useEffect(() => {
+  // Registered once — reads from keysRef so the closure is never stale.
+  // useLayoutEffect ensures this runs before any child useEffect (e.g. the
+  // first fetchPositions call in App), so requests always have the auth header.
+  useLayoutEffect(() => {
     const id = api.interceptors.request.use((config) => {
       console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
       const { apiKey, adminApiKey } = keysRef.current;
@@ -50,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Response interceptor registered once — clears keys on 401
-  useEffect(() => {
+  useLayoutEffect(() => {
     const id = api.interceptors.response.use(
       (response) => response,
       (error) => {
