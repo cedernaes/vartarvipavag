@@ -80,6 +80,18 @@ export class DatabaseManager {
       ON notes(timestamp)
     `);
 
+    // Create sessions table for token-based authentication
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        token TEXT PRIMARY KEY,
+        type TEXT NOT NULL CHECK(type IN ('user', 'admin')),
+        user_agent TEXT,
+        ip TEXT,
+        created_at TEXT NOT NULL,
+        last_accessed_at TEXT NOT NULL
+      )
+    `);
+
     console.log('Database initialized successfully');
   }
 

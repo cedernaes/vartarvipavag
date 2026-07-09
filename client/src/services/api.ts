@@ -126,4 +126,34 @@ export class FeedService {
   }
 }
 
+export interface Session {
+  token: string;
+  type: 'user' | 'admin';
+  user_agent: string | null;
+  ip: string | null;
+  created_at: string;
+  last_accessed_at: string;
+}
+
+export class AuthService {
+  static async logout(): Promise<void> {
+    await api.delete('/api/auth/session').catch(() => {});
+  }
+
+  static async getSessions(): Promise<Session[]> {
+    const response = await api.get<ApiResponse<Session[]>>('/api/admin/sessions');
+    if (!response.data.success) {
+      throw new Error(response.data.error || 'Failed to fetch sessions');
+    }
+    return response.data.data || [];
+  }
+
+  static async revokeSession(token: string): Promise<void> {
+    const response = await api.delete<ApiResponse<null>>(`/api/admin/sessions/${token}`);
+    if (!response.data.success) {
+      throw new Error(response.data.error || 'Failed to revoke session');
+    }
+  }
+}
+
 export default PositionService;

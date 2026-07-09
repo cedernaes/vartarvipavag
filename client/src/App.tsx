@@ -6,12 +6,14 @@ import TravelStats from './components/TravelStats';
 import { FeedService, PositionService, deterministicRandomizePosition } from './services/api';
 import { Position, Post } from './types';
 import ForkMeOnGithub from './components/ForkMeOnGithub';
+import SessionsPanel from './components/SessionsPanel';
 import { useAuth } from './contexts/AuthContext';
 
 const App: React.FC = () => {
   const { isAuthenticated, isAdminMode, logout } = useAuth();
   const [positions, setPositions] = useState<Position[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
+  const [adminTab, setAdminTab] = useState<'resa' | 'sessioner'>('resa');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -130,19 +132,45 @@ const App: React.FC = () => {
                 marginBottom: '16px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '12px'
               }}>
                 <span style={{ fontSize: '20px' }}>🔧</span>
                 <strong>Inloggad som administratör</strong>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
+                  {(['resa', 'sessioner'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setAdminTab(tab)}
+                      style={{
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #fbbf24',
+                        background: adminTab === tab ? '#fbbf24' : 'transparent',
+                        fontWeight: adminTab === tab ? 600 : 400,
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {tab === 'resa' ? 'Resa' : 'Sessioner'}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-            <InterrailMap
-              positions={positions}
-              posts={posts}
-              onPositionDeleted={fetchPositions}
-            />
-            <TravelStats positions={positions} />
-            <Feed posts={posts} onPostDeleted={fetchPositions} />
+            {isAdminMode && adminTab === 'sessioner' ? (
+              <SessionsPanel />
+            ) : (
+              <>
+                <InterrailMap
+                  positions={positions}
+                  posts={posts}
+                  onPositionDeleted={fetchPositions}
+                />
+                <TravelStats positions={positions} />
+                <Feed posts={posts} onPostDeleted={fetchPositions} />
+              </>
+            )}
           </>
         )}
       </main>

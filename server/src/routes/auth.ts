@@ -2,12 +2,22 @@ import { Request, Response, Router } from 'express';
 import { ApiResponse } from '../types';
 import crypto from 'crypto';
 import speakeasy from 'speakeasy';
+import { DatabaseManager } from '../models/database';
 
 const router = Router();
 
 // Hash password using Node.js crypto (equivalent to client-side Web Crypto API)
 function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password).digest('hex');
+}
+
+function getClientIP(req: Request): string {
+  return (
+    req.headers['x-forwarded-for'] as string ||
+    req.socket.remoteAddress ||
+    req.ip ||
+    'unknown'
+  );
 }
 
 interface LoginRequest {
@@ -20,7 +30,20 @@ interface LoginResponse {
   apiKey: string;
 }
 
-// POST /api/auth/login - Validate password and return API key
+async function createSession(type: 'user' | 'admin', req: Request): Promise<string> {
+  const token = crypto.randomBytes(32).toString('hex');
+  const ip = getClientIP(req);
+  const userAgent = req.headers['user-agent'] ?? null;
+  const now = new Date().toISOString();
+  const db = DatabaseManager.getInstance();
+  await db.run(
+    'INSERT INTO sessions (token, type, user_agent, ip, created_at, last_accessed_at) VALUES (?, ?, ?, ?, ?, ?)',
+    [token, type, userAgent, ip, now, now]
+  );
+  return token;
+}
+
+// POST /api/auth/login - Validate password and return a session token
 router.post('/login', async (req: Request, res: Response) => {
   try {
     const { password, isAdmin, totpCode }: LoginRequest = req.body;
@@ -34,7 +57,6 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
-    // Get the expected password from environment
     const expectedPassword = isAdmin
       ? process.env.ADMIN_PASSWORD
       : process.env.CLIENT_PASSWORD;
@@ -69,9 +91,10 @@ router.post('/login', async (req: Request, res: Response) => {
         return;
       }
 
+      const token = await createSession('admin', req);
       const response: ApiResponse<LoginResponse> = {
         success: true,
-        data: { apiKey: hashedPassword }
+        data: { apiKey: token }
       };
       res.json(response);
       return;
@@ -90,14 +113,11 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
-    // Password is valid, return the API key (hashed password)
+    const token = await createSession('user', req);
     const response: ApiResponse<LoginResponse> = {
       success: true,
-      data: {
-        apiKey: hashedPassword
-      }
+      data: { apiKey: token }
     };
-
     res.json(response);
   } catch (error) {
     console.error('Error during login:', error);
@@ -111,5 +131,18 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
-export default router;
+// DELETE /api/auth/session - Invalidate the current session token
+router.delete('/session', async (req: Request, res: Response) => {
+  const token = req.headers['x-api-key'] as string | undefined;
+  if (token) {
+    try {
+      const db = DatabaseManager.getInstance();
+      await db.run('DELETE FROM sessions WHERE token = ?', [token]);
+    } catch (error) {
+      console.error('Error invalidating session:', error);
+    }
+  }
+  res.json({ success: true });
+});
 
+export default router;

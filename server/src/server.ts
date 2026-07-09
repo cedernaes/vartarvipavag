@@ -1,7 +1,6 @@
 // Load all environment variables before any other imports so they are set everywhere
 import 'dotenv/config';
 // Keep newline here to avoid auto-sort of import order
-import crypto from 'crypto';
 import express from 'express';
 import { mkdirSync } from 'fs';
 import { createServer } from 'http';
@@ -11,6 +10,7 @@ import { Server } from 'socket.io';
 import { DatabaseManager } from './models/database';
 import { securityMiddleware } from './middleware/security';
 import authRouter from './routes/auth';
+import adminRouter from './routes/admin';
 import feedRouter from './routes/feed';
 import positionsRouter from './routes/positions';
 import telegramRouter, { initializeTelegramBot } from './routes/telegram';
@@ -81,28 +81,9 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Login endpoint — validates password and returns the API key
-app.post('/api/login', (req, res) => {
-  const { password } = req.body;
-  if (!password) {
-    res.status(400).json({ success: false, error: 'Password required' });
-    return;
-  }
-  const expectedKey = securityMiddleware.getApiKey();
-  if (!expectedKey) {
-    res.status(500).json({ success: false, error: 'Server not configured with a password' });
-    return;
-  }
-  const hashed = crypto.createHash('sha256').update(password).digest('hex');
-  if (hashed !== expectedKey) {
-    res.status(401).json({ success: false, error: 'Incorrect password' });
-    return;
-  }
-  res.json({ success: true, apiKey: hashed });
-});
-
 // API routes
 app.use('/api/auth', authRouter);
+app.use('/api/admin', adminRouter);
 app.use('/api/positions', positionsRouter);
 app.use('/api/telegram', telegramRouter);
 app.use('/api/feed', feedRouter);

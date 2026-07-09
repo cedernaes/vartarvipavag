@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { api, PositionService } from '../services/api';
+import { api, AuthService, PositionService } from '../services/api';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -79,6 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    AuthService.logout(); // best-effort server-side invalidation
     setApiKey(null);
     setAdminApiKey(null);
   };
