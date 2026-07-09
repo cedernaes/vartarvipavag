@@ -61,7 +61,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ showAdminOption = false }) => {
             <label htmlFor="password">Lösenord:</label>
             <div className="password-input-container">
               {/* Force the browser to recognize the passwords as different users */}
-              <input type="text" name="username" value={isAdminMode ? 'admin' : 'user'} autoComplete="username" readOnly style={{ display: 'none' }} />
+              <input type="text" name="username" value={isAdminMode ? 'admin' : 'user'} autoComplete="username" readOnly tabIndex={-1} style={{ display: 'none' }} />
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
@@ -78,6 +78,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ showAdminOption = false }) => {
                 onClick={togglePasswordVisibility}
                 className="password-toggle-btn"
                 aria-label={showPassword ? "Hide password" : "Show password"}
+                tabIndex={-1}
                 disabled={isLoading}
               >
                 <svg
