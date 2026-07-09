@@ -134,7 +134,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ showAdminOption = false }) => {
 
           <button
             type="submit"
-            disabled={isLoading || !password.trim()}
+            disabled={isLoading}
             className="login-button"
           >
             {isLoading ? 'Logging in...' : 'Login'}
