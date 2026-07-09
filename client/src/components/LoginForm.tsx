@@ -14,8 +14,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ showAdminOption = false }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isAdminMode, setIsAdminMode] = useState(showAdminOption); // Auto-enable if accessed via admin URL
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setIsLoading(true);
     setError('');
 
@@ -42,7 +41,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ showAdminOption = false }) => {
         <h2>🗺️ Vart är vi på väg?</h2>
         <p>Ange lösenord för att få tillgång till sidan.</p>
 
-        <form onSubmit={handleSubmit} className="login-form">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+          /* When we have multiple inputs, onSubmit doesn't get called on Enter, so we have to handle it manually */
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
+          className="login-form"
+        >
           {showAdminOption && (
             <div className="form-group">
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
