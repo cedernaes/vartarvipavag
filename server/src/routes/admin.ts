@@ -13,14 +13,15 @@ export interface Session {
   created_at: string;
   last_accessed_at: string;
   device_info: string | null;
+  revoked_at: string | null;
 }
 
-// GET /api/admin/sessions - list all active sessions
-router.get('/sessions', securityMiddleware.validateAdminApiKey, async (req: Request, res: Response) => {
+// GET /api/admin/sessions - list all sessions including revoked
+router.get('/sessions', securityMiddleware.validateAdminApiKey, async (_req: Request, res: Response) => {
   try {
     const db = DatabaseManager.getInstance();
     const sessions: Session[] = await db.all(
-      'SELECT token, type, user_agent, ip, created_at, last_accessed_at, device_info FROM sessions ORDER BY last_accessed_at DESC'
+      'SELECT token, type, user_agent, ip, created_at, last_accessed_at, device_info, revoked_at FROM sessions ORDER BY last_accessed_at DESC'
     );
     const response: ApiResponse<Session[]> = { success: true, data: sessions };
     res.json(response);
@@ -31,11 +32,14 @@ router.get('/sessions', securityMiddleware.validateAdminApiKey, async (req: Requ
   }
 });
 
-// DELETE /api/admin/sessions/:token - revoke a specific session
+// DELETE /api/admin/sessions/:token - revoke a session (keeps the record, marks revoked_at)
 router.delete('/sessions/:token', securityMiddleware.validateAdminApiKey, async (req: Request, res: Response) => {
   try {
     const db = DatabaseManager.getInstance();
-    await db.run('DELETE FROM sessions WHERE token = ?', [req.params.token]);
+    await db.run(
+      'UPDATE sessions SET revoked_at = ? WHERE token = ? AND revoked_at IS NULL',
+      [new Date().toISOString(), req.params.token]
+    );
     const response: ApiResponse<null> = { success: true };
     res.json(response);
   } catch (error) {

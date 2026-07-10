@@ -127,13 +127,14 @@ const SessionsPanel: React.FC = () => {
                 return (
                   <tr key={s.token} style={{
                     borderBottom: '1px solid #f3f4f6',
-                    background: isCurrent ? '#fefce8' : undefined,
+                    background: isCurrent ? '#fefce8' : s.revoked_at ? '#fef2f2' : undefined,
+                    color: s.revoked_at ? '#9ca3af' : undefined,
                   }}>
                     <td style={tdStyle}>
                       {s.type === 'admin' ? 'Admin' : 'Användare'}
                     </td>
                     <td style={tdStyle}>{formatClient(s.user_agent)}</td>
-                    <td style={{ ...tdStyle, color: '#6b7280', maxWidth: '280px', whiteSpace: 'normal' }}>
+                    <td style={{ ...tdStyle, maxWidth: '280px', whiteSpace: 'normal' }}>
                       {formatDeviceInfo(s.device_info)}
                     </td>
                     <td style={tdStyle}>{s.ip ?? '—'}</td>
@@ -142,6 +143,13 @@ const SessionsPanel: React.FC = () => {
                     <td style={tdStyle}>
                       {isCurrent ? (
                         <span style={{ color: '#6b7280', fontSize: '12px' }}>Nuvarande</span>
+                      ) : s.revoked_at ? (
+                        <span
+                          title={formatDate(s.revoked_at)}
+                          style={{ fontSize: '12px', cursor: 'help', textDecorationLine: 'underline', textDecorationStyle: 'dotted' }}
+                        >
+                          Återkallad
+                        </span>
                       ) : (
                         <button
                           onClick={() => revoke(s.token)}

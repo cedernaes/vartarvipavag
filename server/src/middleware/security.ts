@@ -17,7 +17,7 @@ async function lookupSession(token: string, requireAdmin: boolean): Promise<bool
   const db = DatabaseManager.getInstance();
   const typeFilter = requireAdmin ? "AND type = 'admin'" : '';
   const session = await db.get(
-    `SELECT token, last_accessed_at FROM sessions WHERE token = ? ${typeFilter}`,
+    `SELECT token, last_accessed_at FROM sessions WHERE token = ? AND revoked_at IS NULL ${typeFilter}`,
     [token]
   );
 

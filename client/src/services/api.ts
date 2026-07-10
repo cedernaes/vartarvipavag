@@ -147,6 +147,7 @@ export interface Session {
   created_at: string;
   last_accessed_at: string;
   device_info: string | null;
+  revoked_at: string | null;
 }
 
 export class AuthService {
