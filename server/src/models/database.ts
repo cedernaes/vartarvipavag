@@ -88,9 +88,13 @@ export class DatabaseManager {
         user_agent TEXT,
         ip TEXT,
         created_at TEXT NOT NULL,
-        last_accessed_at TEXT NOT NULL
+        last_accessed_at TEXT NOT NULL,
+        device_info TEXT
       )
     `);
+
+    // Migration: add device_info to existing sessions tables that predate this column
+    this.db.run('ALTER TABLE sessions ADD COLUMN device_info TEXT', () => {});
 
     console.log('Database initialized successfully');
   }

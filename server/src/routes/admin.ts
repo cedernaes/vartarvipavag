@@ -12,6 +12,7 @@ export interface Session {
   ip: string | null;
   created_at: string;
   last_accessed_at: string;
+  device_info: string | null;
 }
 
 // GET /api/admin/sessions - list all active sessions
@@ -19,7 +20,7 @@ router.get('/sessions', securityMiddleware.validateAdminApiKey, async (req: Requ
   try {
     const db = DatabaseManager.getInstance();
     const sessions: Session[] = await db.all(
-      'SELECT token, type, user_agent, ip, created_at, last_accessed_at FROM sessions ORDER BY last_accessed_at DESC'
+      'SELECT token, type, user_agent, ip, created_at, last_accessed_at, device_info FROM sessions ORDER BY last_accessed_at DESC'
     );
     const response: ApiResponse<Session[]> = { success: true, data: sessions };
     res.json(response);

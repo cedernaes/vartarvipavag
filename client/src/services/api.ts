@@ -36,12 +36,24 @@ export function deterministicRandomizePosition(positions: Position[]): Position[
   return positions.map((position) => randomizePosition(rng, position));
 }
 
+function collectDeviceInfo() {
+  return {
+    screen: `${screen.width}×${screen.height}`,
+    pixelRatio: window.devicePixelRatio ?? 1,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    language: navigator.language,
+    cores: navigator.hardwareConcurrency ?? null,
+    touch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+  };
+}
+
 export class PositionService {
   static async login(password: string): Promise<string> {
     try {
       const response = await api.post<ApiResponse<{ apiKey: string }>>('/api/auth/login', {
         password,
-        isAdmin: false
+        isAdmin: false,
+        deviceInfo: collectDeviceInfo(),
       });
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error || 'Login failed');
@@ -59,6 +71,7 @@ export class PositionService {
         password,
         isAdmin: true,
         totpCode,
+        deviceInfo: collectDeviceInfo(),
       });
       if (!response.data.success || !response.data.data) {
         throw new Error(response.data.error || 'Admin login failed');
@@ -133,6 +146,7 @@ export interface Session {
   ip: string | null;
   created_at: string;
   last_accessed_at: string;
+  device_info: string | null;
 }
 
 export class AuthService {

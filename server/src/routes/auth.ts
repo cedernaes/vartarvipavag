@@ -24,6 +24,7 @@ interface LoginRequest {
   password: string;
   isAdmin?: boolean;
   totpCode?: string;
+  deviceInfo?: Record<string, unknown>;
 }
 
 interface LoginResponse {
@@ -34,11 +35,12 @@ async function createSession(type: 'user' | 'admin', req: Request): Promise<stri
   const token = crypto.randomBytes(32).toString('hex');
   const ip = getClientIP(req);
   const userAgent = req.headers['user-agent'] ?? null;
+  const deviceInfo = req.body.deviceInfo ? JSON.stringify(req.body.deviceInfo) : null;
   const now = new Date().toISOString();
   const db = DatabaseManager.getInstance();
   await db.run(
-    'INSERT INTO sessions (token, type, user_agent, ip, created_at, last_accessed_at) VALUES (?, ?, ?, ?, ?, ?)',
-    [token, type, userAgent, ip, now, now]
+    'INSERT INTO sessions (token, type, user_agent, ip, created_at, last_accessed_at, device_info) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [token, type, userAgent, ip, now, now, deviceInfo]
   );
   return token;
 }

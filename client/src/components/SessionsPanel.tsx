@@ -27,6 +27,37 @@ function formatClient(ua: string | null): string {
   return os ? `${browser} on ${os}` : browser;
 }
 
+interface DeviceInfo {
+  screen?: string;
+  pixelRatio?: number;
+  timezone?: string;
+  language?: string;
+  cores?: number | null;
+  touch?: boolean;
+}
+
+function formatDeviceInfo(raw: string | null): string {
+  if (!raw) return '—';
+  try {
+    const info: DeviceInfo = JSON.parse(raw);
+    const parts: string[] = [];
+    if (info.screen) {
+      let screen = info.screen;
+      if (info.pixelRatio) {
+        screen += ` (${info.pixelRatio.toFixed(2)}x)`;
+      }
+      parts.push(screen);
+    }
+    if (info.timezone) parts.push(info.timezone);
+    if (info.language) parts.push(info.language);
+    if (info.cores) parts.push(`${info.cores} CPUs`);
+    if (info.touch) parts.push('Touchscreen');
+    return parts.join(', ') || '—';
+  } catch {
+    return '—';
+  }
+}
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('sv-SE', {
     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -83,6 +114,7 @@ const SessionsPanel: React.FC = () => {
               <tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left' }}>
                 <th style={thStyle}>Typ</th>
                 <th style={thStyle}>Webbläsare</th>
+                <th style={thStyle}>Enhet</th>
                 <th style={thStyle}>IP</th>
                 <th style={thStyle}>Skapad</th>
                 <th style={thStyle}>Senast använd</th>
@@ -101,6 +133,9 @@ const SessionsPanel: React.FC = () => {
                       {s.type === 'admin' ? 'Admin' : 'Användare'}
                     </td>
                     <td style={tdStyle}>{formatClient(s.user_agent)}</td>
+                    <td style={{ ...tdStyle, color: '#6b7280', maxWidth: '280px', whiteSpace: 'normal' }}>
+                      {formatDeviceInfo(s.device_info)}
+                    </td>
                     <td style={tdStyle}>{s.ip ?? '—'}</td>
                     <td style={tdStyle}>{formatDate(s.created_at)}</td>
                     <td style={tdStyle}>{formatDate(s.last_accessed_at)}</td>
@@ -129,7 +164,7 @@ const SessionsPanel: React.FC = () => {
               })}
               {sessions.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ ...tdStyle, color: '#6b7280', textAlign: 'center' }}>
+                  <td colSpan={7} style={{ ...tdStyle, color: '#6b7280', textAlign: 'center' }}>
                     Inga aktiva sessioner
                   </td>
                 </tr>
