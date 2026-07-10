@@ -41,6 +41,13 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const handleLogout = () => {
+    if (isAdminMode) {
+      window.history.replaceState(null, '', '/?admin=true');
+    }
+    logout();
+  };
+
   const fetchPositions = async (): Promise<void> => {
     try {
       setLoading(true);
@@ -71,7 +78,13 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isAuthenticated) fetchPositions();
+    if (isAuthenticated) {
+      fetchPositions();
+      // Remove ?admin=true (or any search params) left over from the login flow
+      if (window.location.search) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -121,8 +134,8 @@ const App: React.FC = () => {
               </button>
             </div>
           )}
-          {import.meta.env.DEV && (
-            <button onClick={logout}>Logga ut</button>
+          {import.meta.env.DEV && !isAdminMode && (
+            <button onClick={handleLogout}>Logga ut</button>
           )}
 
           {loading && positions.length === 0 ? (
@@ -148,6 +161,16 @@ const App: React.FC = () => {
                   <span style={{ fontSize: '20px' }}>🔧</span>
                   <strong>Inloggad som administratör</strong>
                   <div style={{ marginLeft: 'auto', display: 'flex', gap: '4px' }}>
+                    <button
+                      onClick={handleLogout}
+                      style={{
+                        ...tabLinkStyle,
+                        border: '1px solid #fbbf24',
+                        background: 'transparent',
+                      }}
+                    >
+                      Logga ut
+                    </button>
                     <Link
                       to="/"
                       style={tabLinkStyle}
