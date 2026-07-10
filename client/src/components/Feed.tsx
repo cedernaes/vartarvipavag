@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Post } from '../types';
 import { FeedService } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import { useEditMode } from '../router';
 
 interface Props {
   posts: Post[];
@@ -20,7 +20,7 @@ function formatCoords(lat: number, lon: number): string {
 }
 
 const Feed: React.FC<Props> = ({ posts, onPostDeleted }) => {
-  const { isAdminMode } = useAuth();
+  const isEditMode = useEditMode();
   const [selected, setSelected] = useState<Post | null>(null);
 
   const handleDelete = async (post: Post) => {
@@ -157,7 +157,7 @@ const Feed: React.FC<Props> = ({ posts, onPostDeleted }) => {
                   📍 {formatCoords(selected.latitude, selected.longitude)}
                 </p>
               )}
-              {isAdminMode && (
+              {isEditMode && (
                 <button
                   className="feed-modal__delete"
                   onClick={() => handleDelete(selected)}

@@ -180,6 +180,13 @@ const App: React.FC = () => {
                       Resa
                     </Link>
                     <Link
+                      to="/redigera"
+                      style={tabLinkStyle}
+                      activeProps={{ style: { ...tabLinkStyle, background: '#fbbf24', fontWeight: 600 } }}
+                    >
+                      Redigera
+                    </Link>
+                    <Link
                       to="/sessioner"
                       style={tabLinkStyle}
                       activeProps={{ style: { ...tabLinkStyle, background: '#fbbf24', fontWeight: 600 } }}

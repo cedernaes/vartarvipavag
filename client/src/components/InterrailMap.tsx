@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { Position, Post } from '../types';
 import { computeNightStopPositionIds } from '../utils/nightStops';
 import { PositionService } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import { useEditMode } from '../router';
 
 // Fix for default markers in React-Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -170,7 +170,7 @@ function NightStopClusters({
   formatDate: (d: string) => string;
   onDelete?: (positionId: string) => void;
 }) {
-  const { isAdminMode } = useAuth();
+  const isEditMode = useEditMode();
   const map = useMap();
   const [zoom, setZoom] = useState(() => map.getZoom());
 
@@ -236,10 +236,10 @@ function NightStopClusters({
                   <div style={{ marginBottom: '4px', fontSize: '0.9em', color: '#666', fontWeight: 'bold' }}>
                     📆 {formatDate(cluster.items[0].timestamp)}
                   </div>
-                  <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold', marginBottom: isAdminMode ? '8px' : '0' }}>
+                  <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold', marginBottom: isEditMode ? '8px' : '0' }}>
                     📍 {cluster.items[0].latitude.toFixed(5)}, {cluster.items[0].longitude.toFixed(4)}
                   </div>
-                  {isAdminMode && onDelete && (
+                  {isEditMode && onDelete && (
                     <button
                       onClick={() => onDelete(cluster.items[0].id)}
                       style={{
@@ -292,7 +292,7 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
   nightStopHour,
   onPositionDeleted
 }) => {
-  const { isAdminMode } = useAuth();
+  const isEditMode = useEditMode();
   const [map, setMap] = useState<L.Map | null>(null);
 
   // Get configuration from props, environment variables, or defaults
@@ -533,11 +533,11 @@ const InterrailMap: React.FC<InterrailMapProps> = ({
                     📆 {formatDateDailyPosition(position.timestamp)}
                   </div>
                   
-                  <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold', marginBottom: isAdminMode ? '8px' : '0' }}>
+                  <div style={{ fontSize: '0.9em', color: '#666', fontWeight: 'bold', marginBottom: isEditMode ? '8px' : '0' }}>
                     📍 {position.latitude.toFixed(5)}, {position.longitude.toFixed(4)}
                   </div>
 
-                  {isAdminMode && (
+                  {isEditMode && (
                     <button
                       onClick={() => handleDeletePosition(position.id)}
                       style={{
