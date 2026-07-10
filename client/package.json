@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@tanstack/react-router": "^1.170.17",
     "axios": "^1.4.0",
     "leaflet": "^1.9.4",
     "react": "^19.2.7",
